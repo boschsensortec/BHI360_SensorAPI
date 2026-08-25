@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Bosch Sensortec GmbH. All rights reserved.
+ * Copyright (c) 2026 Bosch Sensortec GmbH. All rights reserved.
  *
  * BSD-3-Clause
  *
@@ -51,19 +51,7 @@
 #define BST_APP20_CDC_USB_PID  (0xAB2C)
 #define ARDUINO_NICLA_USB_PID  (0x0060)
 
-#ifndef PC
-static uint8_t verb_buff[256] = { 0 };
-#endif
-
 void verbose_write(uint8_t *buffer, uint16_t length);
-
-#ifndef PC
-#define PRINT(format, ...)                             \
-    sprintf((char *)verb_buff, format,##__VA_ARGS__); \
-    verbose_write(verb_buff, strlen((char *)verb_buff));
-#else
-#define PRINT(format, ...)  printf(format,##__VA_ARGS__)
-#endif
 
 #ifdef MCU_APP20
 static enum coines_multi_io_pin cs_pin = BHY360_APP20_CS_PIN;
@@ -86,10 +74,33 @@ bool get_interrupt_status(void)
     coines_rslt = coines_get_pin_config(int_pin, &pin_direction, &pin_value);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error getting interrupt pin status\r\n.%s\r\n", get_coines_error(coines_rslt));
+        char *error_text = get_coines_error(coines_rslt);
+        printf("Error getting interrupt pin status %s\r\n", error_text);
     }
 
     return pin_value == COINES_PIN_VALUE_HIGH;
+}
+
+static char *get_coines_error_extended(int16_t rslt)
+{
+    char *ret = " ";
+
+    switch (rslt)
+    {
+        case COINES_E_I2C_BUS_NOT_ENABLED:
+            ret = "[COINES Error] I2C bus not enabled";
+            break;
+        case COINES_E_I2C_CONFIG_FAILED:
+            ret = "[COINES Error] I2C configuration failed";
+            break;
+        case COINES_E_I2C_CONFIG_EXIST:
+            ret = "[COINES Error] I2C already configured";
+            break;
+        default:
+            ret = "[COINES Error] Unknown error code";
+    }
+
+    return ret;
 }
 
 char *get_coines_error(int16_t rslt)
@@ -148,17 +159,8 @@ char *get_coines_error(int16_t rslt)
         case COINES_E_I2C_INVALID_BUS_INTF:
             ret = "[COINES Error] Invalid I2C bus interface";
             break;
-        case COINES_E_I2C_BUS_NOT_ENABLED:
-            ret = "[COINES Error] I2C bus not enabled";
-            break;
-        case COINES_E_I2C_CONFIG_FAILED:
-            ret = "[COINES Error] I2C configuration failed";
-            break;
-        case COINES_E_I2C_CONFIG_EXIST:
-            ret = "[COINES Error] I2C already configured";
-            break;
         default:
-            ret = "[COINES Error] Unknown error code";
+            ret = get_coines_error_extended(rslt);
     }
 
     return ret;
@@ -212,19 +214,21 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
     enum coines_pin_direction pin_direction;
     enum coines_pin_value pin_value;
     struct coines_board_info board_info;
+    char *error_text;
 
 #ifndef PC
     struct coines_ble_config ble_config;
     ble_config.name = NULL;
     ble_config.tx_power = COINES_TX_POWER_8_DBM;
-    coines_ble_config(&ble_config);
+    coines_rslt = coines_ble_config(&ble_config);
     coines_rslt = coines_open_comm_intf(COINES_COMM_INTF_BLE, NULL);
 #else
     coines_rslt = coines_open_comm_intf(COINES_COMM_INTF_USB, NULL);
 #endif
     if (coines_rslt)
     {
-        PRINT("%s\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("%s\n", error_text);
     }
 
     coines_rslt = coines_get_board_info(&board_info);
@@ -239,7 +243,8 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
     }
     else
     {
-        PRINT("%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("%s\n", error_text);
     }
 
     if (reset_power)
@@ -247,7 +252,8 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
         coines_rslt = coines_set_shuttleboard_vdd_vddio_config(0, 0);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("%s\n", error_text);
         }
 
         pin_direction = COINES_PIN_DIRECTION_OUT;
@@ -255,7 +261,8 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
         coines_rslt = coines_set_pin_config(reset_pin, pin_direction, pin_value);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("%s\n", error_text);
         }
 
         coines_delay_msec(10);
@@ -263,27 +270,30 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
 
     if (intf == BHI360_SPI_INTERFACE)
     {
-        PRINT("Host Interface : SPI\r\n");
+        printf("Host Interface : SPI\r\n");
         coines_rslt = coines_config_spi_bus(COINES_SPI_BUS_0, COINES_SPI_SPEED_1_MHZ, COINES_SPI_MODE0);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("Error configuring to SPI.\r\n%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("Error configuring to SPI %s\r\n", error_text);
         }
     }
     else
     {
-        PRINT("Host Interface : I2C\r\n");
+        printf("Host Interface : I2C\r\n");
         coines_rslt = coines_config_i2c_bus(COINES_I2C_BUS_0, COINES_I2C_FAST_MODE);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("Error configuring to I2C.\r\n%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("Error configuring to I2C %s\r\n", error_text);
         }
     }
 
     coines_rslt = coines_set_shuttleboard_vdd_vddio_config(1800, 1800);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error setting Vdd and Vddio to 1.8V.\r\n%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error setting Vdd and Vddio to 1.8V %s\r\n", error_text);
     }
 
     pin_direction = COINES_PIN_DIRECTION_OUT;
@@ -291,7 +301,8 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
     coines_rslt = coines_set_pin_config(reset_pin, pin_direction, pin_value);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error setting the reset pin\r\n.%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error setting the reset pin %s\r\n", error_text);
     }
 
     /* Configure as a pull-down. The BHy operates the interrupt pin as an active high, level, push-pull by default */
@@ -300,7 +311,8 @@ void setup_interfaces(bool reset_power, enum bhi360_intf intf)
     coines_rslt = coines_set_pin_config(int_pin, pin_direction, pin_value);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error configuring the interrupt pin\r\n.%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error configuring the interrupt pin %s\r\n", error_text);
     }
 
     coines_delay_msec(50);
@@ -312,12 +324,13 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
     enum coines_pin_direction pin_direction;
     enum coines_pin_value pin_value;
     struct coines_board_info board_info;
+    char *error_text;
 
 #ifndef PC
     struct coines_ble_config ble_config;
     ble_config.name = NULL;
     ble_config.tx_power = COINES_TX_POWER_8_DBM;
-    coines_ble_config(&ble_config);
+    coines_rslt = coines_ble_config(&ble_config);
     coines_rslt = coines_open_comm_intf(COINES_COMM_INTF_BLE, NULL);
 #else
     struct coines_serial_com_config scom_config;
@@ -331,7 +344,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
 #endif
     if (coines_rslt)
     {
-        PRINT("%s\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("%s\n", error_text);
     }
 
     coines_rslt = coines_get_board_info(&board_info);
@@ -357,7 +371,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
     }
     else
     {
-        PRINT("%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("%s\r\n", error_text);
     }
 
     if (reset_power)
@@ -365,7 +380,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
         coines_rslt = coines_set_shuttleboard_vdd_vddio_config(0, 0);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("%s\r\n", error_text);
         }
 
         pin_direction = COINES_PIN_DIRECTION_OUT;
@@ -373,7 +389,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
         coines_rslt = coines_set_pin_config(reset_pin, pin_direction, pin_value);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("%s\r\n", error_text);
         }
 
         coines_delay_msec(10);
@@ -381,27 +398,30 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
 
     if (intf == BHI360_SPI_INTERFACE)
     {
-        PRINT("Host Interface : SPI\r\n");
+        printf("Host Interface : SPI\r\n");
         coines_rslt = coines_config_spi_bus(COINES_SPI_BUS_0, COINES_SPI_SPEED_1_MHZ, COINES_SPI_MODE0);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("Error configuring to SPI.\r\n%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("Error configuring to SPI %s\r\n", error_text);
         }
     }
     else
     {
-        PRINT("Host Interface : I2C\r\n");
+        printf("Host Interface : I2C\r\n");
         coines_rslt = coines_config_i2c_bus(COINES_I2C_BUS_0, COINES_I2C_FAST_MODE);
         if (coines_rslt != COINES_SUCCESS)
         {
-            PRINT("Error configuring to I2C.\r\n%s\r\n", get_coines_error(coines_rslt));
+            error_text = get_coines_error(coines_rslt);
+            printf("Error configuring to I2C %s\r\n", error_text);
         }
     }
 
     coines_rslt = coines_set_shuttleboard_vdd_vddio_config(1800, 1800);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error setting Vdd and Vddio to 1.8V.\r\n%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error setting Vdd and Vddio to 1.8V.\r\n%s\r\n", error_text);
     }
 
     pin_direction = COINES_PIN_DIRECTION_OUT;
@@ -409,7 +429,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
     coines_rslt = coines_set_pin_config(reset_pin, pin_direction, pin_value);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error setting the reset pin\r\n.%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error setting the reset pin %s\r\n", error_text);
     }
 
     /* Configure as a pull-down. The BHy operates the interrupt pin as an active high, level, push-pull by default */
@@ -418,7 +439,8 @@ void setup_interfaces_with_port(bool reset_power, enum bhi360_intf intf, const c
     coines_rslt = coines_set_pin_config(int_pin, pin_direction, pin_value);
     if (coines_rslt != COINES_SUCCESS)
     {
-        PRINT("Error configuring the interrupt pin\r\n.%s\r\n", get_coines_error(coines_rslt));
+        error_text = get_coines_error(coines_rslt);
+        printf("Error configuring the interrupt pin %s\r\n", error_text);
     }
 
     coines_delay_msec(50);
@@ -428,18 +450,19 @@ void close_interfaces(enum bhi360_intf intf)
 {
     if (intf == BHI360_I2C_INTERFACE)
     {
-        coines_deconfig_i2c_bus(COINES_I2C_BUS_0);
+        (void)coines_deconfig_i2c_bus(COINES_I2C_BUS_0);
     }
     else
     {
-        coines_deconfig_spi_bus(COINES_SPI_BUS_0);
+        (void)coines_deconfig_spi_bus(COINES_SPI_BUS_0);
     }
 
-    coines_close_comm_intf(COINES_COMM_INTF_USB, NULL);
+    (void)coines_close_comm_intf(COINES_COMM_INTF_USB, NULL);
 
-    fflush(stdout);
+    (void)fflush(stdout);
 
-    coines_set_shuttleboard_vdd_vddio_config(0, 0);
+    (void)coines_set_shuttleboard_vdd_vddio_config(0, 0);
+
     coines_delay_msec(100);
 
     /* Coines interface reset */
@@ -481,9 +504,9 @@ void bhi360_delay_us(uint32_t us, void *private_data)
     coines_delay_usec(us);
 }
 
-char *get_sensor_error_text(uint8_t sensor_error)
+static char *get_sensor_error_text_part_one(uint8_t sensor_error)
 {
-    char *ret;
+    char *ret = " ";
 
     switch (sensor_error)
     {
@@ -543,6 +566,17 @@ char *get_sensor_error_text(uint8_t sensor_error)
         case 0x22:
             ret = "[Sensor error] Sensor Init Failed: No Response from Device";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_error_text_part_two(uint8_t sensor_error)
+{
+    char *ret = " ";
+
+    switch (sensor_error)
+    {
         case 0x23:
             ret = "[Sensor error] Sensor Init Failed: Unknown";
             break;
@@ -600,6 +634,17 @@ char *get_sensor_error_text(uint8_t sensor_error)
         case 0x45:
             ret = "[Sensor error] Invalid Memory Access";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_error_text_part_three(uint8_t sensor_error)
+{
+    char *ret = " ";
+
+    switch (sensor_error)
+    {
         case 0x50:
             ret = "[Sensor error] Algorithm Error: BSX Init";
             break;
@@ -651,6 +696,17 @@ char *get_sensor_error_text(uint8_t sensor_error)
         case 0x75:
             ret = "[Sensor error] Host Download Channel Underflow (Host Read Too Fast)";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_error_text_part_four(uint8_t sensor_error)
+{
+    char *ret = " ";
+
+    switch (sensor_error)
+    {
         case 0x76:
             ret = "[Sensor error] Host Upload Channel Overflow (Host Wrote Too Fast)";
             break;
@@ -696,6 +752,17 @@ char *get_sensor_error_text(uint8_t sensor_error)
         case 0xB1:
             ret = "[Sensor error] Error Sending Initialized Meta Events";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_error_text_part_five(uint8_t sensor_error)
+{
+    char *ret = " ";
+
+    switch (sensor_error)
+    {
         case 0xC0:
             ret = "[Sensor error] Bootloader reports: Command Error";
             break;
@@ -724,59 +791,46 @@ char *get_sensor_error_text(uint8_t sensor_error)
     return ret;
 }
 
-char *get_physical_sensor_name(uint8_t sensor_id)
+char *get_sensor_error_text(uint8_t sensor_error)
 {
-    char *ret;
+    char *ret = " ";
+
+    ret = get_sensor_error_text_part_one(sensor_error);
+
+    if (strcmp(ret, " ") == 0)
+    {
+        ret = get_sensor_error_text_part_two(sensor_error);
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_error_text_part_three(sensor_error);
+
+            if (strcmp(ret, " ") == 0)
+            {
+                ret = get_sensor_error_text_part_four(sensor_error);
+
+                if (strcmp(ret, " ") == 0)
+                {
+                    ret = get_sensor_error_text_part_five(sensor_error);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+static char *get_physical_sensor_name_extended(uint8_t sensor_id)
+{
+    char *ret = "";
 
     switch (sensor_id)
     {
-        case BHI360_PHYS_SENSOR_ID_ACCELEROMETER:
-            ret = "Accelerometer";
+        case BHI360_PHYS_SENSOR_ID_BME_TEMP:
+            ret = "BME Temperature";
             break;
-        case BHI360_PHYS_SENSOR_ID_NOT_SUPPORTED:
-            ret = "Not supported now";
-            break;
-        case BHI360_PHYS_SENSOR_ID_GYROSCOPE:
-            ret = "Gyroscope";
-            break;
-        case BHI360_PHYS_SENSOR_ID_MAGNETOMETER:
-            ret = "Magnetometer";
-            break;
-        case BHI360_PHYS_SENSOR_ID_TEMP_GYRO:
-            ret = "Temperature Gyroscope";
-            break;
-        case BHI360_PHYS_SENSOR_ID_ANY_MOTION:
-            ret = "Any Motion not available now";
-            break;
-        case BHI360_PHYS_SENSOR_ID_PRESSURE:
-            ret = "Pressure";
-            break;
-        case BHI360_PHYS_SENSOR_ID_POSITION:
-            ret = "Position";
-            break;
-        case BHI360_PHYS_SENSOR_ID_HUMIDITY:
-            ret = "Humidity";
-            break;
-        case BHI360_PHYS_SENSOR_ID_TEMPERATURE:
-            ret = "Temperature";
-            break;
-        case BHI360_PHYS_SENSOR_ID_GAS_RESISTOR:
-            ret = "Gas Resistor";
-            break;
-        case BHI360_PHYS_SENSOR_ID_PHYS_STEP_COUNTER:
-            ret = "Step Counter";
-            break;
-        case BHI360_PHYS_SENSOR_ID_PHYS_STEP_DETECTOR:
-            ret = "Step Detector";
-            break;
-        case BHI360_PHYS_SENSOR_ID_PHYS_SIGN_MOTION:
-            ret = "Significant Motion";
-            break;
-        case BHI360_PHYS_SENSOR_ID_PHYS_ANY_MOTION:
-            ret = "Any Motion";
-            break;
-        case BHI360_PHYS_SENSOR_ID_EX_CAMERA_INPUT:
-            ret = "External Camera Input";
+        case BHI360_PHYS_SENSOR_ID_FEATURE_CORE:
+            ret = "Feature Core";
             break;
         case BHI360_PHYS_SENSOR_ID_GPS:
             ret = "GPS";
@@ -806,49 +860,90 @@ char *get_physical_sensor_name(uint8_t sensor_id)
     return ret;
 }
 
-uint8_t get_physical_sensor_id(uint8_t virt_sensor_id)
+char *get_physical_sensor_name(uint8_t sensor_id)
 {
-    uint8_t ret;
+    char *ret = "";
 
-    switch (virt_sensor_id)
+    switch (sensor_id)
     {
-        case BHI360_SENSOR_ID_ACC_PASS:
-        case BHI360_SENSOR_ID_ACC_RAW:
-        case BHI360_SENSOR_ID_ACC:
-        case BHI360_SENSOR_ID_ACC_BIAS:
-        case BHI360_SENSOR_ID_ACC_WU:
-        case BHI360_SENSOR_ID_ACC_RAW_WU:
-            ret = BHI360_PHYS_SENSOR_ID_ACCELEROMETER;
+        case BHI360_PHYS_SENSOR_ID_ACCELEROMETER:
+            ret = "Accelerometer";
             break;
-        case BHI360_SENSOR_ID_GYRO_PASS:
-        case BHI360_SENSOR_ID_GYRO_RAW:
-        case BHI360_SENSOR_ID_GYRO:
-        case BHI360_SENSOR_ID_GYRO_BIAS:
-        case BHI360_SENSOR_ID_GYRO_WU:
-        case BHI360_SENSOR_ID_GYRO_RAW_WU:
-        case BHI360_SENSOR_ID_GYRO_BIAS_WU:
-            ret = BHI360_PHYS_SENSOR_ID_GYROSCOPE;
+        case BHI360_PHYS_SENSOR_ID_NOT_SUPPORTED:
+            ret = "Not supported now";
             break;
-        case BHI360_SENSOR_ID_MAG_PASS:
-        case BHI360_SENSOR_ID_MAG_RAW:
-        case BHI360_SENSOR_ID_MAG:
-        case BHI360_SENSOR_ID_MAG_BIAS:
-        case BHI360_SENSOR_ID_MAG_WU:
-        case BHI360_SENSOR_ID_MAG_RAW_WU:
-        case BHI360_SENSOR_ID_MAG_BIAS_WU:
-            ret = BHI360_PHYS_SENSOR_ID_MAGNETOMETER;
+        case BHI360_PHYS_SENSOR_ID_GYROSCOPE:
+            ret = "Gyroscope";
+            break;
+        case BHI360_PHYS_SENSOR_ID_MAGNETOMETER:
+            ret = "Magnetometer";
+            break;
+        case BHI360_PHYS_SENSOR_ID_TEMP_GYRO:
+            ret = "Temperature Gyroscope";
+            break;
+        case BHI360_PHYS_SENSOR_ID_BMP_PRESSURE:
+            ret = "BMP Pressure";
+            break;
+        case BHI360_PHYS_SENSOR_ID_BMP_TEMPERATURE:
+            ret = "BMP Temperature";
+            break;
+        case BHI360_PHYS_SENSOR_ID_POSITION:
+            ret = "Position";
+            break;
+        case BHI360_PHYS_SENSOR_ID_HUMIDITY:
+            ret = "Humidity";
+            break;
+        case BHI360_PHYS_SENSOR_ID_TEMPERATURE:
+            ret = "Temperature";
+            break;
+        case BHI360_PHYS_SENSOR_ID_GAS_RESISTOR:
+            ret = "Gas Resistor";
+            break;
+        case BHI360_PHYS_SENSOR_ID_PHYS_STEP_COUNTER:
+            ret = "Step Counter";
+            break;
+        case BHI360_PHYS_SENSOR_ID_PHYS_STEP_DETECTOR:
+            ret = "Step Detector";
+            break;
+        case BHI360_PHYS_SENSOR_ID_PHYS_SIGN_MOTION:
+            ret = "Significant Motion";
+            break;
+        case BHI360_PHYS_SENSOR_ID_PHYS_ANY_MOTION:
+            ret = "Any Motion";
             break;
         default:
-            ret = BHI360_PHYS_SENSOR_ID_NOT_SUPPORTED;
-            break;
+            ret = get_physical_sensor_name_extended(sensor_id);
     }
 
     return ret;
 }
 
-char *get_sensor_name(uint8_t sensor_id)
+uint8_t get_physical_sensor_id(uint8_t virt_sensor_id)
 {
-    char *ret;
+    uint8_t ret = 0;
+
+    if ((virt_sensor_id >= BHI360_SENSOR_ID_ACC_PASS && virt_sensor_id <= BHI360_SENSOR_ID_ACC_RAW_WU) ||
+        (virt_sensor_id == BHI360_SENSOR_ID_ACC_BIAS_WU))
+    {
+        ret = BHI360_PHYS_SENSOR_ID_ACCELEROMETER;
+    }
+    else if ((virt_sensor_id >= BHI360_SENSOR_ID_GYRO_PASS && virt_sensor_id <= BHI360_SENSOR_ID_GYRO_RAW_WU) ||
+             (virt_sensor_id == BHI360_SENSOR_ID_GYRO_BIAS_WU))
+    {
+        ret = BHI360_PHYS_SENSOR_ID_GYROSCOPE;
+    }
+    else if ((virt_sensor_id >= BHI360_SENSOR_ID_MAG_PASS && virt_sensor_id <= BHI360_SENSOR_ID_MAG_RAW_WU) ||
+             (virt_sensor_id == BHI360_SENSOR_ID_MAG_BIAS_WU))
+    {
+        ret = BHI360_PHYS_SENSOR_ID_MAGNETOMETER;
+    }
+
+    return ret;
+}
+
+char *get_sensor_name_part_one(uint8_t sensor_id)
+{
+    char *ret = " ";
 
     switch (sensor_id)
     {
@@ -909,6 +1004,17 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_GRA:
             ret = "Gravity vector";
             break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_name_part_two(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_GRA_WU:
             ret = "Gravity vector wake up";
             break;
@@ -951,12 +1057,29 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_MAG_BIAS_WU:
             ret = "Magnetometer offset wake up";
             break;
+        case BHI360_SENSOR_ID_KLIO:
+            ret = "Klio";
+            break;
+        case BHI360_SENSOR_ID_KLIO_LOG:
+            ret = "Klio log";
+            break;
         case BHI360_SENSOR_ID_TEMP:
             ret = "Temperature";
             break;
         case BHI360_SENSOR_ID_BARO:
             ret = "Barometer";
             break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_name_part_three(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_HUM:
             ret = "Humidity";
             break;
@@ -1014,6 +1137,17 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_STD_WU:
             ret = "Step detector wake up";
             break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_name_part_four(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_TILT_DETECTOR:
             ret = "Tilt detector";
             break;
@@ -1026,9 +1160,6 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_PICKUP_GESTURE:
             ret = "Pickup gesture";
             break;
-        case BHI360_SENSOR_BMP_TEMPERATURE:
-            ret = "BMP Temperature";
-            break;
         case BHI360_SENSOR_ID_SIG_LP_WU:
             ret = "Low Power Significant motion wake up";
             break;
@@ -1040,9 +1171,6 @@ char *get_sensor_name(uint8_t sensor_id)
             break;
         case BHI360_SENSOR_ID_AR:
             ret = "Activity recognition";
-            break;
-        case BHI360_SENSOR_ID_EXCAMERA:
-            ret = "External camera trigger";
             break;
         case BHI360_SENSOR_ID_GPS:
             ret = "GPS";
@@ -1059,9 +1187,6 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_STATIONARY_DET:
             ret = "Stationary detect";
             break;
-        case BHI360_SENSOR_BMP_TEMPERATURE_WU:
-            ret = "BMP Temperature wake up";
-            break;
         case BHI360_SENSOR_ID_ANY_MOTION_LP_WU:
             ret = "Low Power Any motion wake up";
             break;
@@ -1070,6 +1195,23 @@ char *get_sensor_name(uint8_t sensor_id)
             break;
         case BHI360_SENSOR_ID_MOTION_DET:
             ret = "Motion detect";
+            break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_name_part_five(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
+        case BHI360_SENSOR_ID_BMP_TEMPERATURE:
+            ret = "BMP Temperature ";
+            break;
+        case BHI360_SENSOR_ID_PRESSURE:
+            ret = "BMP Pressure ";
             break;
         case BHI360_SENSOR_ID_AR_WEAR_WU:
             ret = "Activity recognition for Wearables";
@@ -1101,6 +1243,9 @@ char *get_sensor_name(uint8_t sensor_id)
         case BHI360_SENSOR_ID_NDOF_HEAD_ORI_E:
             ret = "NDOF Head Orientation Euler";
             break;
+        case BHI360_SENSOR_ID_HEAD_GESTURE_DETECTOR:
+            ret = "Head Gesture Detector";
+            break;
         default:
             if ((sensor_id >= BHI360_SENSOR_ID_CUSTOM_START) && (sensor_id <= BHI360_SENSOR_ID_CUSTOM_END))
             {
@@ -1114,42 +1259,58 @@ char *get_sensor_name(uint8_t sensor_id)
 
     return ret;
 }
+char *get_sensor_name(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    ret = get_sensor_name_part_one(sensor_id);
+    if (strcmp(ret, " ") == 0)
+    {
+        ret = get_sensor_name_part_two(sensor_id);
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_name_part_three(sensor_id);
+
+            if (strcmp(ret, " ") == 0)
+            {
+                ret = get_sensor_name_part_four(sensor_id);
+
+                if (strcmp(ret, " ") == 0)
+                {
+                    ret = get_sensor_name_part_five(sensor_id);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
 
 float get_sensor_dynamic_range_scaling(uint8_t sensor_id, float dynamic_range)
 {
     float scaling = -1.0f;
 
-    switch (sensor_id)
+    if ((sensor_id >= BHI360_SENSOR_ID_ACC_PASS && sensor_id <= BHI360_SENSOR_ID_ACC_RAW_WU) ||
+        (sensor_id == BHI360_SENSOR_ID_ACC_BIAS_WU))
     {
-        case BHI360_SENSOR_ID_ACC_PASS:
-        case BHI360_SENSOR_ID_ACC_RAW:
-        case BHI360_SENSOR_ID_ACC:
-        case BHI360_SENSOR_ID_ACC_BIAS:
-        case BHI360_SENSOR_ID_ACC_WU:
-        case BHI360_SENSOR_ID_ACC_RAW_WU:
-            scaling = dynamic_range / 32768.0f;
-            break;
-        case BHI360_SENSOR_ID_GYRO_PASS:
-        case BHI360_SENSOR_ID_GYRO_RAW:
-        case BHI360_SENSOR_ID_GYRO:
-        case BHI360_SENSOR_ID_GYRO_BIAS:
-        case BHI360_SENSOR_ID_GYRO_WU:
-        case BHI360_SENSOR_ID_GYRO_RAW_WU:
-        case BHI360_SENSOR_ID_GYRO_BIAS_WU:
-            scaling = dynamic_range / 32768.0f;
-            break;
-        case BHI360_SENSOR_ID_MAG_PASS:
-        case BHI360_SENSOR_ID_MAG_RAW:
-        case BHI360_SENSOR_ID_MAG:
-        case BHI360_SENSOR_ID_MAG_BIAS:
-        case BHI360_SENSOR_ID_MAG_WU:
-        case BHI360_SENSOR_ID_MAG_RAW_WU:
-        case BHI360_SENSOR_ID_MAG_BIAS_WU:
-            scaling = dynamic_range / 32768.0f;
-            break;
-        default:
-            printf("Sensor ID not supported for dynamic range scaling\r\n");
-            scaling = -1.0f; /* Do not apply the scaling factor */
+        scaling = dynamic_range / 32768.0f;
+    }
+    else if ((sensor_id >= BHI360_SENSOR_ID_GYRO_PASS && sensor_id <= BHI360_SENSOR_ID_GYRO_RAW_WU) ||
+             (sensor_id == BHI360_SENSOR_ID_GYRO_BIAS_WU))
+    {
+        scaling = dynamic_range / 32768.0f;
+    }
+    else if ((sensor_id >= BHI360_SENSOR_ID_MAG_PASS && sensor_id <= BHI360_SENSOR_ID_MAG_RAW_WU) ||
+             (sensor_id == BHI360_SENSOR_ID_MAG_BIAS_WU))
+    {
+        scaling = dynamic_range / 32768.0f;
+    }
+    else
+    {
+        printf("Sensor ID not supported for dynamic range scaling\r\n");
+        scaling = -1.0f; /* Do not apply the scaling factor */
+
     }
 
     return scaling;
@@ -1159,44 +1320,32 @@ char *get_sensor_si_unit(uint8_t sensor_id)
 {
     char *ret;
 
-    switch (sensor_id)
+    if ((sensor_id >= BHI360_SENSOR_ID_ACC_PASS && sensor_id <= BHI360_SENSOR_ID_ACC_RAW_WU) ||
+        (sensor_id == BHI360_SENSOR_ID_ACC_BIAS_WU))
     {
-        case BHI360_SENSOR_ID_ACC_PASS:
-        case BHI360_SENSOR_ID_ACC_RAW:
-        case BHI360_SENSOR_ID_ACC:
-        case BHI360_SENSOR_ID_ACC_BIAS:
-        case BHI360_SENSOR_ID_ACC_WU:
-        case BHI360_SENSOR_ID_ACC_RAW_WU:
-            ret = "Earth g-s";
-            break;
-        case BHI360_SENSOR_ID_GYRO_PASS:
-        case BHI360_SENSOR_ID_GYRO_RAW:
-        case BHI360_SENSOR_ID_GYRO:
-        case BHI360_SENSOR_ID_GYRO_BIAS:
-        case BHI360_SENSOR_ID_GYRO_WU:
-        case BHI360_SENSOR_ID_GYRO_RAW_WU:
-        case BHI360_SENSOR_ID_GYRO_BIAS_WU:
-            ret = "degrees/second";
-            break;
-        case BHI360_SENSOR_ID_MAG_PASS:
-        case BHI360_SENSOR_ID_MAG_RAW:
-        case BHI360_SENSOR_ID_MAG:
-        case BHI360_SENSOR_ID_MAG_BIAS:
-        case BHI360_SENSOR_ID_MAG_WU:
-        case BHI360_SENSOR_ID_MAG_RAW_WU:
-        case BHI360_SENSOR_ID_MAG_BIAS_WU:
-            ret = "microtesla";
-            break;
-        default:
-            ret = "";
+        ret = "Earth g-s";
+    }
+    else if ((sensor_id >= BHI360_SENSOR_ID_GYRO_PASS && sensor_id <= BHI360_SENSOR_ID_GYRO_RAW_WU) ||
+             (sensor_id == BHI360_SENSOR_ID_GYRO_BIAS_WU))
+    {
+        ret = "degrees/second";
+    }
+    else if ((sensor_id >= BHI360_SENSOR_ID_MAG_PASS && sensor_id <= BHI360_SENSOR_ID_MAG_RAW_WU) ||
+             (sensor_id == BHI360_SENSOR_ID_MAG_BIAS_WU))
+    {
+        ret = "microtesla";
+    }
+    else
+    {
+        ret = "";
     }
 
     return ret;
 }
 
-char *get_sensor_parse_format(uint8_t sensor_id)
+static char *get_sensor_parse_format_part_one(uint8_t sensor_id)
 {
-    char *ret;
+    char *ret = " ";
 
     switch (sensor_id)
     {
@@ -1218,6 +1367,19 @@ char *get_sensor_parse_format(uint8_t sensor_id)
         case BHI360_SENSOR_ID_MAG_RAW:
         case BHI360_SENSOR_ID_MAG:
         case BHI360_SENSOR_ID_MAG_BIAS:
+            ret = "s16,s16,s16";
+            break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_parse_format_part_two(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_MAG_BIAS_WU:
         case BHI360_SENSOR_ID_MAG_WU:
         case BHI360_SENSOR_ID_MAG_RAW_WU:
@@ -1239,26 +1401,52 @@ char *get_sensor_parse_format(uint8_t sensor_id)
         case BHI360_SENSOR_ID_ORI_WU:
             ret = "s16,s16,s16";
             break;
+        case BHI360_SENSOR_ID_KLIO:
+            ret = "u8,s8,u8,u8,u8,u8,f,f";
+            break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_parse_format_part_three(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_DEVICE_ORI:
         case BHI360_SENSOR_ID_DEVICE_ORI_WU:
         case BHI360_SENSOR_ID_HUM:
         case BHI360_SENSOR_ID_HUM_WU:
         case BHI360_SENSOR_ID_PROX:
         case BHI360_SENSOR_ID_PROX_WU:
-        case BHI360_SENSOR_ID_EXCAMERA:
         case BHI360_SENSOR_ID_MULTI_TAP:
             ret = "u8";
             break;
         case BHI360_SENSOR_ID_TEMP:
         case BHI360_SENSOR_ID_TEMP_WU:
-        case BHI360_SENSOR_BMP_TEMPERATURE:
-        case BHI360_SENSOR_BMP_TEMPERATURE_WU:
             ret = "s16";
             break;
         case BHI360_SENSOR_ID_BARO:
         case BHI360_SENSOR_ID_BARO_WU:
             ret = "u24";
             break;
+        case BHI360_SENSOR_ID_SI_ACCEL:
+        case BHI360_SENSOR_ID_SI_GYROS:
+            ret = "f,f,f";
+            break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_parse_format_part_four(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_GAS:
         case BHI360_SENSOR_ID_GAS_WU:
         case BHI360_SENSOR_ID_STC:
@@ -1267,31 +1455,9 @@ char *get_sensor_parse_format(uint8_t sensor_id)
         case BHI360_SENSOR_ID_STC_LP_WU:
             ret = "u32";
             break;
-        case BHI360_SENSOR_ID_SI_ACCEL:
-        case BHI360_SENSOR_ID_SI_GYROS:
-            ret = "f,f,f";
-            break;
         case BHI360_SENSOR_ID_LIGHT:
         case BHI360_SENSOR_ID_LIGHT_WU:
             ret = "s16";
-            break;
-        case BHI360_SENSOR_ID_SIG:
-        case BHI360_SENSOR_ID_STD:
-        case BHI360_SENSOR_ID_STD_WU:
-        case BHI360_SENSOR_ID_TILT_DETECTOR:
-        case BHI360_SENSOR_ID_WAKE_GESTURE:
-        case BHI360_SENSOR_ID_GLANCE_GESTURE:
-        case BHI360_SENSOR_ID_PICKUP_GESTURE:
-        case BHI360_SENSOR_ID_SIG_LP_WU:
-        case BHI360_SENSOR_ID_STD_LP:
-        case BHI360_SENSOR_ID_STD_LP_WU:
-        case BHI360_SENSOR_ID_WRIST_TILT_GESTURE:
-        case BHI360_SENSOR_ID_STATIONARY_DET:
-        case BHI360_SENSOR_ID_ANY_MOTION_LP_WU:
-        case BHI360_SENSOR_ID_NO_MOTION_LP_WU:
-        case BHI360_SENSOR_ID_MOTION_DET:
-        case BHI360_SENSOR_ID_WRIST_WEAR_LP_WU:
-            ret = "";
             break;
         case BHI360_SENSOR_ID_AR:
         case BHI360_SENSOR_ID_AR_WEAR_WU:
@@ -1311,6 +1477,35 @@ char *get_sensor_parse_format(uint8_t sensor_id)
         case BHI360_SENSOR_ID_NDOF_HEAD_ORI_Q:
             ret = "s16,s16,s16,s16";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_parse_format_part_five(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
+        case BHI360_SENSOR_ID_SIG:
+        case BHI360_SENSOR_ID_STD:
+        case BHI360_SENSOR_ID_STD_WU:
+        case BHI360_SENSOR_ID_TILT_DETECTOR:
+        case BHI360_SENSOR_ID_WAKE_GESTURE:
+        case BHI360_SENSOR_ID_GLANCE_GESTURE:
+        case BHI360_SENSOR_ID_PICKUP_GESTURE:
+        case BHI360_SENSOR_ID_SIG_LP_WU:
+        case BHI360_SENSOR_ID_STD_LP:
+        case BHI360_SENSOR_ID_STD_LP_WU:
+        case BHI360_SENSOR_ID_WRIST_TILT_GESTURE:
+        case BHI360_SENSOR_ID_STATIONARY_DET:
+        case BHI360_SENSOR_ID_ANY_MOTION_LP_WU:
+        case BHI360_SENSOR_ID_NO_MOTION_LP_WU:
+        case BHI360_SENSOR_ID_MOTION_DET:
+        case BHI360_SENSOR_ID_WRIST_WEAR_LP_WU:
+            ret = "";
+            break;
 
         case BHI360_SENSOR_ID_IMU_HEAD_ORI_E:
         case BHI360_SENSOR_ID_NDOF_HEAD_ORI_E:
@@ -1323,41 +1518,54 @@ char *get_sensor_parse_format(uint8_t sensor_id)
     return ret;
 }
 
-char *get_sensor_axis_names(uint8_t sensor_id)
+char *get_sensor_parse_format(uint8_t sensor_id)
 {
     char *ret;
 
+    ret = get_sensor_parse_format_part_one(sensor_id);
+    if (strcmp(ret, " ") == 0)
+    {
+        ret = get_sensor_parse_format_part_two(sensor_id);
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_parse_format_part_three(sensor_id);
+
+            if (strcmp(ret, " ") == 0)
+            {
+                ret = get_sensor_parse_format_part_four(sensor_id);
+
+                if (strcmp(ret, " ") == 0)
+                {
+                    ret = get_sensor_parse_format_part_five(sensor_id);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+static char *get_sensor_axis_names_part_one(uint8_t sensor_id)
+{
+    char *ret = "";
+
+    if (((sensor_id >= BHI360_SENSOR_ID_ACC_PASS) && (sensor_id <= BHI360_SENSOR_ID_LACC_WU)) ||
+        (sensor_id == BHI360_SENSOR_ID_ACC_BIAS_WU) || (sensor_id == BHI360_SENSOR_ID_GYRO_BIAS_WU) ||
+        (sensor_id == BHI360_SENSOR_ID_MAG_BIAS_WU))
+    {
+        ret = "x,y,z";
+    }
+
+    return ret;
+}
+
+static char *get_sensor_axis_names_part_two(uint8_t sensor_id)
+{
+    char *ret = "";
+
     switch (sensor_id)
     {
-        case BHI360_SENSOR_ID_ACC_PASS:
-        case BHI360_SENSOR_ID_ACC_RAW:
-        case BHI360_SENSOR_ID_ACC:
-        case BHI360_SENSOR_ID_ACC_BIAS:
-        case BHI360_SENSOR_ID_ACC_BIAS_WU:
-        case BHI360_SENSOR_ID_ACC_WU:
-        case BHI360_SENSOR_ID_ACC_RAW_WU:
-        case BHI360_SENSOR_ID_GYRO_PASS:
-        case BHI360_SENSOR_ID_GYRO_RAW:
-        case BHI360_SENSOR_ID_GYRO:
-        case BHI360_SENSOR_ID_GYRO_BIAS:
-        case BHI360_SENSOR_ID_GYRO_BIAS_WU:
-        case BHI360_SENSOR_ID_GYRO_WU:
-        case BHI360_SENSOR_ID_GYRO_RAW_WU:
-        case BHI360_SENSOR_ID_MAG_PASS:
-        case BHI360_SENSOR_ID_MAG_RAW:
-        case BHI360_SENSOR_ID_MAG:
-        case BHI360_SENSOR_ID_MAG_BIAS:
-        case BHI360_SENSOR_ID_MAG_BIAS_WU:
-        case BHI360_SENSOR_ID_MAG_WU:
-        case BHI360_SENSOR_ID_MAG_RAW_WU:
-        case BHI360_SENSOR_ID_GRA:
-        case BHI360_SENSOR_ID_GRA_WU:
-        case BHI360_SENSOR_ID_LACC:
-        case BHI360_SENSOR_ID_LACC_WU:
-        case BHI360_SENSOR_ID_SI_ACCEL:
-        case BHI360_SENSOR_ID_SI_GYROS:
-            ret = "x,y,z";
-            break;
         case BHI360_SENSOR_ID_RV:
         case BHI360_SENSOR_ID_RV_WU:
         case BHI360_SENSOR_ID_GAMERV:
@@ -1374,12 +1582,24 @@ char *get_sensor_axis_names(uint8_t sensor_id)
         case BHI360_SENSOR_ID_DEVICE_ORI_WU:
             ret = "o";
             break;
+        case BHI360_SENSOR_ID_KLIO:
+            ret = "lin,lid,lpr,lcr,rin,rid,rc,rsc";
+            break;
         case BHI360_SENSOR_ID_TEMP:
         case BHI360_SENSOR_ID_TEMP_WU:
-        case BHI360_SENSOR_BMP_TEMPERATURE:
-        case BHI360_SENSOR_BMP_TEMPERATURE_WU:
             ret = "t";
             break;
+    }
+
+    return ret;
+}
+
+static char *get_sensor_axis_names_part_three(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_BARO:
         case BHI360_SENSOR_ID_BARO_WU:
             ret = "p";
@@ -1404,9 +1624,19 @@ char *get_sensor_axis_names(uint8_t sensor_id)
         case BHI360_SENSOR_ID_STC_WU:
         case BHI360_SENSOR_ID_STC_LP:
         case BHI360_SENSOR_ID_STC_LP_WU:
-        case BHI360_SENSOR_ID_EXCAMERA:
             ret = "c";
             break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_axis_names_part_four(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_SIG:
         case BHI360_SENSOR_ID_STD:
         case BHI360_SENSOR_ID_STD_WU:
@@ -1425,6 +1655,17 @@ char *get_sensor_axis_names(uint8_t sensor_id)
         case BHI360_SENSOR_ID_WRIST_WEAR_LP_WU:
             ret = "e";
             break;
+    }
+
+    return ret;
+}
+
+char *get_sensor_axis_names_part_five(uint8_t sensor_id)
+{
+    char *ret = " ";
+
+    switch (sensor_id)
+    {
         case BHI360_SENSOR_ID_AR:
         case BHI360_SENSOR_ID_AR_WEAR_WU:
             ret = "a";
@@ -1457,6 +1698,76 @@ char *get_sensor_axis_names(uint8_t sensor_id)
     return ret;
 }
 
+char *get_sensor_axis_names(uint8_t sensor_id)
+{
+    char *ret;
+
+    ;
+
+    ret = get_sensor_axis_names_part_one(sensor_id);
+
+    if (strcmp(ret, " ") == 0)
+    {
+        ret = get_sensor_axis_names_part_two(sensor_id);
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_axis_names_part_three(sensor_id);
+        }
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_axis_names_part_four(sensor_id);
+        }
+
+        if (strcmp(ret, " ") == 0)
+        {
+            ret = get_sensor_axis_names_part_five(sensor_id);
+        }
+    }
+
+    return ret;
+}
+
+char *get_klio_error(bhi360_klio_param_driver_error_state_t error)
+{
+    char *ret = "";
+
+    switch (error)
+    {
+        case KLIO_DRIVER_ERROR_NONE:
+            break;
+        case KLIO_DRIVER_ERROR_INVALID_PARAMETER:
+            ret = "[Klio error] Invalid parameter";
+            break;
+        case KLIO_DRIVER_ERROR_PARAMETER_OUT_OF_RANGE:
+            ret = "[Klio error] Parameter out of range";
+            break;
+        case KLIO_DRIVER_ERROR_INVALID_PATTERN_OPERATION:
+            ret = "[Klio error] Invalid pattern operation";
+            break;
+        case KLIO_DRIVER_ERROR_NOT_IMPLEMENTED:
+            ret = "[Klio error] Not implemented";
+            break;
+        case KLIO_DRIVER_ERROR_BUFSIZE:
+            ret = "[Klio error] Buffer size";
+            break;
+        case KLIO_DRIVER_ERROR_INTERNAL:
+            ret = "[Klio error] Internal";
+            break;
+        case KLIO_DRIVER_ERROR_UNDEFINED:
+            ret = "[Klio error] Undefined";
+            break;
+        case KLIO_DRIVER_ERROR_OPERATION_PENDING:
+            ret = "[Klio error] Operation pending";
+            break;
+        default:
+            ret = "[Klio error] Unknown error code";
+    }
+
+    return ret;
+}
+
 #ifndef PC
 void default_verbose_write(uint8_t *buffer, uint16_t length)
 {
@@ -1466,3 +1777,108 @@ void default_verbose_write(uint8_t *buffer, uint16_t length)
 void verbose_write(uint8_t *buffer, uint16_t length) __attribute__ ((weak, alias("default_verbose_write")));
 
 #endif
+
+void print_api_error(int8_t rslt, struct bhi360_dev *dev)
+{
+    if (rslt != BHI360_OK)
+    {
+        printf("%s\r\n", get_api_error(rslt));
+        if ((rslt == BHI360_E_IO) && (dev != NULL))
+        {
+            printf("%s\r\n", get_coines_error(dev->hif.intf_rslt));
+            dev->hif.intf_rslt = BHI360_INTF_RET_SUCCESS;
+        }
+    }
+}
+
+void upload_firmware(const uint8_t fw[], uint32_t length, struct bhi360_dev *dev)
+{
+    uint8_t sensor_error = 0;
+    int8_t temp_rslt;
+    int8_t rslt = BHI360_OK;
+
+    printf("Loading firmware into RAM.\r\n");
+    rslt = bhi360_upload_firmware_to_ram(fw, length, dev);
+
+    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
+    if (sensor_error)
+    {
+        printf("%s\r\n", get_sensor_error_text(sensor_error));
+    }
+
+    print_api_error(rslt, dev);
+    print_api_error(temp_rslt, dev);
+
+    printf("Booting from RAM.\r\n");
+    rslt = bhi360_boot_from_ram(dev);
+
+    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
+    if (sensor_error)
+    {
+        printf("%s\r\n", get_sensor_error_text(sensor_error));
+    }
+
+    print_api_error(rslt, dev);
+    print_api_error(temp_rslt, dev);
+}
+
+void setup_host_int_ctrl(struct bhi360_dev *dev)
+{
+    int8_t rslt;
+    uint8_t hintr_ctrl, hif_ctrl;
+
+    /* Check the interrupt pin and FIFO configurations. Disable status and debug */
+    hintr_ctrl = BHI360_ICTL_DISABLE_STATUS_FIFO | BHI360_ICTL_DISABLE_DEBUG;
+
+    rslt = bhi360_set_host_interrupt_ctrl(hintr_ctrl, dev);
+    print_api_error(rslt, dev);
+    rslt = bhi360_get_host_interrupt_ctrl(&hintr_ctrl, dev);
+    print_api_error(rslt, dev);
+
+    printf("Host interrupt control\r\n");
+    printf("    Wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_W) ? "disabled" : "enabled");
+    printf("    Non wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_NW) ? "disabled" : "enabled");
+    printf("    Status FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_STATUS_FIFO) ? "disabled" : "enabled");
+    printf("    Debugging %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_DEBUG) ? "disabled" : "enabled");
+    printf("    Fault %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FAULT) ? "disabled" : "enabled");
+    printf("    Interrupt is %s.\r\n", (hintr_ctrl & BHI360_ICTL_ACTIVE_LOW) ? "active low" : "active high");
+    printf("    Interrupt is %s triggered.\r\n", (hintr_ctrl & BHI360_ICTL_EDGE) ? "pulse" : "level");
+    printf("    Interrupt pin drive is %s.\r\n", (hintr_ctrl & BHI360_ICTL_OPEN_DRAIN) ? "open drain" : "push-pull");
+
+    /* Configure the host interface */
+    hif_ctrl = 0;
+    rslt = bhi360_set_host_intf_ctrl(hif_ctrl, dev);
+    print_api_error(rslt, dev);
+}
+
+void init_sensor(struct bhi360_dev *dev, enum bhi360_intf intf)
+{
+    uint8_t chip_id = 0;
+    int8_t rslt;
+
+#ifdef BHI360_USE_I2C
+    rslt = bhi360_init(intf, bhi360_i2c_read, bhi360_i2c_write, bhi360_delay_us, BHI360_RD_WR_LEN, NULL, dev);
+#else
+    rslt = bhi360_init(intf, bhi360_spi_read, bhi360_spi_write, bhi360_delay_us, BHI360_RD_WR_LEN, NULL, dev);
+#endif
+
+    print_api_error(rslt, dev);
+
+    rslt = bhi360_soft_reset(dev);
+    print_api_error(rslt, dev);
+
+    rslt = bhi360_get_chip_id(&chip_id, dev);
+    print_api_error(rslt, dev);
+
+    /* Check for a valid Chip ID */
+    if (chip_id == BHI360_CHIP_ID)
+    {
+        printf("Chip ID read 0x%X\r\n", chip_id);
+    }
+    else
+    {
+        printf("Device not found. Chip ID read 0x%X\r\n", chip_id);
+
+        return;
+    }
+}

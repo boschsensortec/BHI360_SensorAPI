@@ -1,0 +1,1 @@
+mingw32-make COINES_INSTALL_PATH=../../submodules/coines API_LOCATION=../../source COMMON_LOCATION=.. TARGET=MCU_APP30 LOCATION=FLASH download

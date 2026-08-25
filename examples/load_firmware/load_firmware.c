@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Bosch Sensortec GmbH. All rights reserved.
+ * Copyright (c) 2026 Bosch Sensortec GmbH. All rights reserved.
  *
  * BSD-3-Clause
  *
@@ -35,23 +35,15 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-
-#include "bhi360.h"
-#include "bhi360_parse.h"
 #include "common.h"
 
-#include "bhi360/Bosch_Shuttle3_BHI360_BMM350C_BMP580_BME688.fw.h"
+#include "bhi360/Bosch_Shuttle3_BHI360_bsxsam.fw.h"
 
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev);
-static int8_t upload_firmware(struct bhi360_dev *dev);
-
-enum bhi360_intf intf;
+static int8_t upload_firmware_partly(struct bhi360_dev *dev);
 
 int main(void)
 {
+    enum bhi360_intf intf;
     uint8_t chip_id = 0;
     uint16_t version = 0;
     int8_t rslt;
@@ -68,21 +60,9 @@ int main(void)
     setup_interfaces(true, intf); /* Perform a power on reset */
 
 #ifdef BHI360_USE_I2C
-    rslt = bhi360_init(BHI360_I2C_INTERFACE,
-                       bhi360_i2c_read,
-                       bhi360_i2c_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
+    rslt = bhi360_init(intf, bhi360_i2c_read, bhi360_i2c_write, bhi360_delay_us, BHI360_RD_WR_LEN, NULL, &bhy);
 #else
-    rslt = bhi360_init(BHI360_SPI_INTERFACE,
-                       bhi360_spi_read,
-                       bhi360_spi_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
+    rslt = bhi360_init(intf, bhi360_spi_read, bhi360_spi_write, bhi360_delay_us, BHI360_RD_WR_LEN, NULL, &bhy);
 #endif
     print_api_error(rslt, &bhy);
 
@@ -123,7 +103,7 @@ int main(void)
         int8_t temp_rslt;
         printf("Loading firmware.\r\n");
 
-        rslt = upload_firmware(&bhy);
+        rslt = upload_firmware_partly(&bhy);
         temp_rslt = bhi360_get_error_value(&sensor_error, &bhy);
         if (sensor_error)
         {
@@ -166,22 +146,7 @@ int main(void)
     return rslt;
 }
 
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev)
-{
-    if (rslt != BHI360_OK)
-    {
-        printf("%s\r\n", get_api_error(rslt));
-        if ((rslt == BHI360_E_IO) && (dev != NULL))
-        {
-            printf("%s\r\n", get_coines_error(dev->hif.intf_rslt));
-            dev->hif.intf_rslt = BHI360_INTF_RET_SUCCESS;
-        }
-
-        exit(0);
-    }
-}
-
-static int8_t upload_firmware(struct bhi360_dev *dev)
+static int8_t upload_firmware_partly(struct bhi360_dev *dev)
 {
     uint32_t incr = 256; /* Max command packet size */
     uint32_t len = sizeof(bhi360_firmware_image);

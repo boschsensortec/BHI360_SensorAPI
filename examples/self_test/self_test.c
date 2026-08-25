@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Bosch Sensortec GmbH. All rights reserved.
+ * Copyright (c) 2026 Bosch Sensortec GmbH. All rights reserved.
  *
  * BSD-3-Clause
  *
@@ -35,29 +35,10 @@
  *
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-
-#include "bhi360.h"
-#include "bhi360_parse.h"
 #include "common.h"
 
-#include "bhi360/Bosch_Shuttle3_BHI360_BMM350C_BMP580_BME688.fw.h"
-
-/*! @brief Prints API error code.
- *
- *  @param[in] rslt      : API Error code.
- *  @param[in] dev       : Device reference.
- */
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev);
-
-/*! @brief Loads firmware image to BHy ram.
- *
- *  @param[in] boot_stat : Boot status.
- *  @param[in] dev       : Device reference.
- */
-static void upload_firmware(uint8_t boot_stat, struct bhi360_dev *dev);
+#include "bhi360/Bosch_Shuttle3_BHI360_bsxsam.fw.h"
 
 /*! @brief Prints self test response.
  *
@@ -66,15 +47,14 @@ static void upload_firmware(uint8_t boot_stat, struct bhi360_dev *dev);
  */
 static void print_self_test_resp(struct bhi360_self_test_resp *self_test_resp, struct bhi360_dev *dev);
 
-enum bhi360_intf intf;
-
 int main(void)
 {
-    uint8_t chip_id = 0;
+    enum bhi360_intf intf;
+
     uint16_t version = 0;
     int8_t rslt;
     struct bhi360_dev bhy;
-    uint8_t hif_ctrl, boot_status, hintr_ctrl;
+    uint8_t boot_status = 0;
     struct bhi360_self_test_resp self_test_resp;
 
 #ifdef BHI360_USE_I2C
@@ -85,48 +65,9 @@ int main(void)
 
     setup_interfaces(true, intf); /* Perform a power on reset */
 
-#ifdef BHI360_USE_I2C
-    rslt = bhi360_init(BHI360_I2C_INTERFACE,
-                       bhi360_i2c_read,
-                       bhi360_i2c_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#else
-    rslt = bhi360_init(BHI360_SPI_INTERFACE,
-                       bhi360_spi_read,
-                       bhi360_spi_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#endif
-    print_api_error(rslt, &bhy);
+    init_sensor(&bhy, intf);
 
-    rslt = bhi360_soft_reset(&bhy);
-    print_api_error(rslt, &bhy);
-
-    rslt = bhi360_get_chip_id(&chip_id, &bhy);
-    print_api_error(rslt, &bhy);
-
-    /* Check for a valid Chip ID */
-    if (chip_id == BHI360_CHIP_ID)
-    {
-        printf("Chip ID read 0x%X\r\n", chip_id);
-    }
-    else
-    {
-        printf("Device not found. Chip ID read 0x%X\r\n", chip_id);
-    }
-
-    /* Configure the host interface */
-    hif_ctrl = BHI360_HIF_CTRL_ASYNC_STATUS_CHANNEL;
-    rslt = bhi360_set_host_intf_ctrl(hif_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
-    hintr_ctrl = 0;
-    rslt = bhi360_get_host_interrupt_ctrl(&hintr_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
+    setup_host_int_ctrl(&bhy);
 
     /* Check if the sensor is ready to load firmware */
     rslt = bhi360_get_boot_status(&boot_status, &bhy);
@@ -134,7 +75,7 @@ int main(void)
 
     if (boot_status & BHI360_BST_HOST_INTERFACE_READY)
     {
-        upload_firmware(boot_status, &bhy);
+        upload_firmware(bhi360_firmware_image, sizeof(bhi360_firmware_image), &bhy);
 
         rslt = bhi360_get_kernel_version(&version, &bhy);
         print_api_error(rslt, &bhy);
@@ -219,49 +160,4 @@ static void print_self_test_resp(struct bhi360_self_test_resp *self_test_resp, s
     }
 
     print_api_error(rslt, dev);
-}
-
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev)
-{
-    if (rslt != BHI360_OK)
-    {
-        printf("%s\r\n", get_api_error(rslt));
-        if ((rslt == BHI360_E_IO) && (dev != NULL))
-        {
-            printf("%s\r\n", get_coines_error(dev->hif.intf_rslt));
-            dev->hif.intf_rslt = BHI360_INTF_RET_SUCCESS;
-        }
-
-        exit(0);
-    }
-}
-
-static void upload_firmware(uint8_t boot_stat, struct bhi360_dev *dev)
-{
-    uint8_t sensor_error;
-    int8_t temp_rslt;
-    int8_t rslt = BHI360_OK;
-
-    printf("Loading firmware into RAM.\r\n");
-    rslt = bhi360_upload_firmware_to_ram(bhi360_firmware_image, sizeof(bhi360_firmware_image), dev);
-    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
-    if (sensor_error)
-    {
-        printf("%s\r\n", get_sensor_error_text(sensor_error));
-    }
-
-    print_api_error(rslt, dev);
-    print_api_error(temp_rslt, dev);
-
-    printf("Booting from RAM.\r\n");
-    rslt = bhi360_boot_from_ram(dev);
-
-    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
-    if (sensor_error)
-    {
-        printf("%s\r\n", get_sensor_error_text(sensor_error));
-    }
-
-    print_api_error(rslt, dev);
-    print_api_error(temp_rslt, dev);
 }
