@@ -6,7 +6,7 @@ BHI360_INTF ?=
 
 COINES_BACKEND ?= COINES_BRIDGE
 
-API_LOCATION ?= ../..
+API_LOCATION ?= ../../source
 
 FW_LOCATION ?= ../..
 
@@ -19,9 +19,9 @@ $(COMMON_LOCATION)/common/verbose.c \
 $(API_LOCATION)/bhi360.c \
 $(API_LOCATION)/bhi360_hif.c \
 $(API_LOCATION)/bhi360_virtual_sensor_info_param.c \
+$(API_LOCATION)/bhi360_virtual_sensor_conf_param.c \
 $(API_LOCATION)/bhi360_system_param.c \
 $(API_LOCATION)/bhi360_logbin.c \
-$(API_LOCATION)/bhi360_parse.c \
 $(API_LOCATION)/bhi360_event_data.c
 
 INCLUDEPATHS += . \

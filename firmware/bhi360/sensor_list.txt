@@ -1,0 +1,808 @@
+
+1. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_bsxsam_ndof_HeadOrientation.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       120 | Head Misalignment Calibrator         |  170 |   1 |    25.0000 |   400.0000 |
+       121 | IMU Head Orientation Quaternion      |  171 |   1 |     1.5625 |   400.0000 |
+       122 | NDOF Head Orientation Quaternion     |  172 |   1 |     1.5625 |   400.0000 |
+       123 | IMU Head Orientation Euler           |  173 |   1 |     1.5625 |   400.0000 |
+       124 | NDOF Head Orientation Euler          |  174 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  238 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+2. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_BME69x_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       128 | Temperature                          |  217 |   3 |     1.0000 |    16.0000 |
+       129 | Barometer                            |  184 |   3 |     0.0000 |     0.0000 |
+       130 | Humidity                             |  219 |   3 |     1.0000 |    16.0000 |
+       131 | Gas                                  |  216 |   3 |     1.0000 |    16.0000 |
+       132 | Temperature wake up                  |  183 |   3 |     1.0000 |    16.0000 |
+       133 | Barometer wake up                    |  218 |   3 |     0.0000 |     0.0000 |
+       134 | Humidity wake up                     |  185 |   3 |     1.0000 |    16.0000 |
+       135 | Gas wake up                          |  186 |   3 |     1.0000 |    16.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+3. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM150_bsxsam_ndof_HeadOrientation.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |    50.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |    50.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       120 | Head Misalignment Calibrator         |  170 |   1 |    25.0000 |   400.0000 |
+       121 | IMU Head Orientation Quaternion      |  171 |   1 |     1.5625 |   400.0000 |
+       122 | NDOF Head Orientation Quaternion     |  172 |   1 |     1.5625 |   400.0000 |
+       123 | IMU Head Orientation Euler           |  173 |   1 |     1.5625 |   400.0000 |
+       124 | NDOF Head Orientation Euler          |  174 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  238 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+4. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_BME688_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       128 | Temperature                          |  217 |   3 |     1.0000 |    16.0000 |
+       129 | Barometer                            |  184 |   3 |     0.0000 |     0.0000 |
+       130 | Humidity                             |  219 |   3 |     1.0000 |    16.0000 |
+       131 | Gas                                  |  216 |   3 |     1.0000 |    16.0000 |
+       132 | Temperature wake up                  |  183 |   3 |     1.0000 |    16.0000 |
+       133 | Barometer wake up                    |  218 |   3 |     0.0000 |     0.0000 |
+       134 | Humidity wake up                     |  185 |   3 |     1.0000 |    16.0000 |
+       135 | Gas wake up                          |  186 |   3 |     1.0000 |    16.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+5. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+6. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_turbo.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   800.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   800.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   800.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   800.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   800.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   800.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   800.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   800.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   800.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   800.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   800.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   800.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   800.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   800.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   800.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   800.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   800.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   800.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+7. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_lite_turbo.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   800.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   800.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   800.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   800.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   800.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   800.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   800.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   800.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+8. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_lite.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+9. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_LDO.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+       160 | Lean Device Orientation              |  121 |   1 |     1.5625 |   400.0000 |
+
+
+10. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_HeadOrientation.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       120 | Head Misalignment Calibrator         |  170 |   1 |    25.0000 |   400.0000 |
+       121 | IMU Head Orientation Quaternion      |  171 |   1 |     1.5625 |   400.0000 |
+       123 | IMU Head Orientation Euler           |  173 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  238 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+11. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_BMP58X_BME688_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       128 | Temperature                          |  217 |   3 |     1.0000 |    16.0000 |
+       129 | Barometer                            |  184 |   3 |     0.0000 |     0.0000 |
+       130 | Humidity                             |  219 |   3 |     1.0000 |    16.0000 |
+       131 | Gas                                  |  216 |   3 |     1.0000 |    16.0000 |
+       132 | Temperature wake up                  |  183 |   3 |     1.0000 |    16.0000 |
+       133 | Barometer wake up                    |  218 |   3 |     0.0000 |     0.0000 |
+       134 | Humidity wake up                     |  185 |   3 |     1.0000 |    16.0000 |
+       135 | Gas wake up                          |  186 |   3 |     1.0000 |    16.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       138 | BMP Temperature                      |  211 |   3 |     0.0000 |     0.0000 |
+       142 | BMP Temperature wake up              |  212 |   3 |     0.0000 |     0.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       150 | BMP Pressure                         |  223 |   1 |     0.0000 |     0.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       157 | BMP Pressure wake up                 |  229 |   1 |     0.0000 |     0.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+12. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM150_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |    50.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |    50.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+13. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_lite_Klio_cyclic.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+       112 | Klio cyclic                          |  135 |   1 |    25.0000 |    50.0000 |
+       127 | Klio log                             |  136 |   1 |     1.5625 |    50.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+14. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_bsxsam_ndof_turbo.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   800.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   800.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   800.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   800.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   800.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   800.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   800.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   800.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   800.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   800.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   800.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   800.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   800.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   800.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   800.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   800.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   800.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   800.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   800.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   800.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+15. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_Poll_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   200.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   200.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   200.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   200.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   200.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   200.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   200.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+16. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMP58X_bsxsam.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       138 | BMP Temperature                      |  211 |   3 |     0.0000 |     0.0000 |
+       142 | BMP Temperature wake up              |  212 |   3 |     0.0000 |     0.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       150 | BMP Pressure                         |  223 |   1 |     0.0000 |     0.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       157 | BMP Pressure wake up                 |  229 |   1 |     0.0000 |     0.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+17. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_HeadOrientation_HW_Activity.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       120 | Head Misalignment Calibrator         |  170 |   1 |    25.0000 |   400.0000 |
+       121 | IMU Head Orientation Quaternion      |  171 |   1 |     1.5625 |   400.0000 |
+       123 | IMU Head Orientation Euler           |  173 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  235 |   1 |     1.0000 |     1.0000 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+18. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_bsxsam_HeadGestureDetector.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       120 | Head Misalignment Calibrator         |  170 |   1 |    25.0000 |   400.0000 |
+       121 | IMU Head Orientation Quaternion      |  171 |   1 |     1.5625 |   400.0000 |
+       123 | IMU Head Orientation Euler           |  173 |   1 |     1.5625 |   400.0000 |
+       125 | Head Gesture Detector                |  150 |   1 |    25.0000 |   100.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  238 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+19. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_BMP58X_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       138 | BMP Temperature                      |  211 |   3 |     0.0000 |     0.0000 |
+       142 | BMP Temperature wake up              |  212 |   3 |     0.0000 |     0.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       150 | BMP Pressure                         |  223 |   1 |     0.0000 |     0.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       157 | BMP Pressure wake up                 |  229 |   1 |     0.0000 |     0.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |
+
+
+20. Virtual Sensors for firmware: Bosch_Shuttle3_BHI360_BMM350_bsxsam_ndof.fw
+
+ Sensor ID |                          Sensor Name |  ID | Ver |  Min rate |  Max rate |
+-----------+-------------------------------------+------+------+------------+------------+
+         1 | Accelerometer passthrough            |  205 |   1 |     1.5625 |   400.0000 |
+         3 | Accelerometer uncalibrated           |  203 |   1 |     1.5625 |   400.0000 |
+         4 | Accelerometer corrected              |  241 |   1 |     1.5625 |   400.0000 |
+         5 | Accelerometer offset                 |  209 |   1 |     1.5625 |     1.5625 |
+         6 | Accelerometer corrected wake up      |  192 |   1 |     1.5625 |   400.0000 |
+         7 | Accelerometer uncalibrated wake up   |  204 |   1 |     1.5625 |   400.0000 |
+        10 | Gyroscope passthrough                |  207 |   1 |     1.5625 |   400.0000 |
+        12 | Gyroscope uncalibrated               |  244 |   1 |     1.5625 |   400.0000 |
+        13 | Gyroscope corrected                  |  243 |   1 |     1.5625 |   400.0000 |
+        14 | Gyroscope offset                     |  208 |   1 |     1.5625 |     1.5625 |
+        15 | Gyroscope wake up                    |  194 |   1 |     1.5625 |   400.0000 |
+        16 | Gyroscope uncalibrated wake up       |  195 |   1 |     1.5625 |   400.0000 |
+        19 | Magnetometer passthrough             |  206 |   1 |     1.5625 |   400.0000 |
+        21 | Magnetometer uncalibrated            |  245 |   1 |     1.5625 |   400.0000 |
+        22 | Magnetometer corrected               |  242 |   1 |     1.5625 |   400.0000 |
+        23 | Magnetometer offset                  |  210 |   1 |     1.5625 |     1.5625 |
+        24 | Magnetometer wake up                 |  193 |   1 |     1.5625 |   400.0000 |
+        25 | Magnetometer uncalibrated wake up    |  196 |   1 |     1.5625 |   400.0000 |
+        28 | Gravity vector                       |  247 |   1 |     1.5625 |   400.0000 |
+        29 | Gravity vector wake up               |  198 |   1 |     1.5625 |   400.0000 |
+        31 | Linear acceleration                  |  246 |   1 |     1.5625 |   400.0000 |
+        32 | Linear acceleration wake up          |  197 |   1 |     1.5625 |   400.0000 |
+        34 | Rotation vector                      |  251 |   1 |     1.5625 |   400.0000 |
+        35 | Rotation vector wake up              |  199 |   1 |     1.5625 |   400.0000 |
+        37 | Game rotation vector                 |  252 |   1 |     1.5625 |   400.0000 |
+        38 | Game rotation vector wake up         |  200 |   1 |     1.5625 |   400.0000 |
+        40 | Geo-magnetic rotation vector         |  253 |   1 |     1.5625 |   400.0000 |
+        41 | Geo-magnetic rotation vector wake up |  201 |   1 |     1.5625 |   400.0000 |
+        43 | Orientation                          |  254 |   1 |     1.5625 |   400.0000 |
+        44 | Orientation wake up                  |  202 |   1 |     1.5625 |   400.0000 |
+       136 | Low Power Step counter               |  249 |   1 |     1.0000 |     1.0000 |
+       137 | Low Power Step detector              |  248 |   1 |     1.0000 |     1.0000 |
+       143 | Low Power Any motion wake up         |  191 |   1 |     1.0000 |     1.0000 |
+       153 | Multi Tap Detector                   |  182 |   1 |     1.5625 |     1.5625 |
+       154 | Activity recognition for Wearables   |  237 |   1 |     1.5625 |     1.5625 |
+       156 | Low Power Wrist Gesture wake up      |  228 |   1 |     1.0000 |     1.0000 |
+       158 | Low Power Wrist Wear wake up         |  178 |   1 |     1.0000 |     1.0000 |
+       159 | Low Power No Motion wake up          |  181 |   1 |     1.0000 |     1.0000 |

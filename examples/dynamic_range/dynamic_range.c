@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Bosch Sensortec GmbH. All rights reserved.
+ * Copyright (c) 2026 Bosch Sensortec GmbH. All rights reserved.
  *
  * BSD-3-Clause
  *
@@ -34,64 +34,40 @@
  * @brief   Example to change sensor dynamic range
  *
  */
-
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-
-#include "bhi360.h"
-#include "bhi360_parse.h"
 #include "common.h"
-#include "bhi360_virtual_sensor_conf_param.h"
-#include "bhi360_event_data.h"
+#include "bhi360_parse.h"
 
-#include "bhi360/Bosch_Shuttle3_BHI360_BMM350C_BMP580_BME688.fw.h"
+#include "bhi360/Bosch_Shuttle3_BHI360_BMM350_BMP58X_BME688_bsxsam_ndof.fw.h"
 
-#define WORK_BUFFER_SIZE              UINT16_C(2048)
 #define SCALING_FACTOR_INVALID_LIMIT  -1.0f
 
-/*! @brief Parse meta event.
- *
- *  @param[in] callback_info : Sensor data info.
- *  @param[in] callback_ref  : Parse reference.
- */
-static void parse_meta_event(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref);
-
-/*! @brief Prints API error code.
- *
- *  @param[in] rslt      : API Error code.
- *  @param[in] dev       : Device reference.
- */
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev);
-
-/*! @brief Loads firmware image to BHy ram.
- *
- *  @param[in] boot_stat : Boot status.
- *  @param[in] dev       : Device reference.
- */
-static void upload_firmware(uint8_t boot_stat, struct bhi360_dev *dev);
+#define PHYSICAL_ACCEL_ID             1
+#define PHYSICAL_GYRO_ID              3
+#define PHYSICAL_MAG_ID               5
 
 /*! @brief Parse gyro data.
  *
  *  @param[in] callback_info : sensor data info.
  *  @param[in] callback_ref  : Parse reference.
  */
-static void parse_gyro(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref);
+static void parse_3axis(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref);
+static float get_sensor_scaling(uint8_t sensor_id, uint16_t dynamic_range[]);
 
-enum bhi360_intf intf;
+uint16_t range[8] = { 0 };
 
 int main(void)
 {
-    uint8_t chip_id = 0;
+    enum bhi360_intf intf;
+    struct bhi360_dev bhy;
     uint16_t version = 0;
     int8_t rslt;
-    struct bhi360_dev bhy;
-    uint8_t hif_ctrl, boot_status, hintr_ctrl;
+    uint8_t boot_status = 0;
     uint8_t accuracy; /* Accuracy is reported as a meta event. It is being printed alongside the data */
-    uint8_t work_buffer[WORK_BUFFER_SIZE];
+    uint8_t work_buffer[WORK_BUFFER_SIZE] = { 0 };
     struct bhi360_virtual_sensor_conf_param_conf sensor_conf = { 0 };
     uint8_t loop = 0;
-    uint8_t limit = 50;
+    uint8_t limit = 30;
 
 #ifdef BHI360_USE_I2C
     intf = BHI360_I2C_INTERFACE;
@@ -101,61 +77,9 @@ int main(void)
 
     setup_interfaces(true, intf); /* Perform a power on reset */
 
-#ifdef BHI360_USE_I2C
-    rslt = bhi360_init(BHI360_I2C_INTERFACE,
-                       bhi360_i2c_read,
-                       bhi360_i2c_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#else
-    rslt = bhi360_init(BHI360_SPI_INTERFACE,
-                       bhi360_spi_read,
-                       bhi360_spi_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#endif
-    print_api_error(rslt, &bhy);
+    init_sensor(&bhy, intf);
 
-    rslt = bhi360_soft_reset(&bhy);
-    print_api_error(rslt, &bhy);
-
-    rslt = bhi360_get_chip_id(&chip_id, &bhy);
-    print_api_error(rslt, &bhy);
-
-    /* Check for a valid Chip ID */
-    if (chip_id == BHI360_CHIP_ID)
-    {
-        printf("Chip ID read 0x%X\r\n", chip_id);
-    }
-    else
-    {
-        printf("Device not found. Chip ID read 0x%X\r\n", chip_id);
-    }
-
-    /* Configure the host interface */
-    hif_ctrl = BHI360_HIF_CTRL_ASYNC_STATUS_CHANNEL;
-    rslt = bhi360_set_host_intf_ctrl(hif_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
-
-    /* Check the interrupt pin and FIFO configurations. Disable status and debug */
-    hintr_ctrl = BHI360_ICTL_DISABLE_STATUS_FIFO | BHI360_ICTL_DISABLE_DEBUG;
-
-    rslt = bhi360_get_host_interrupt_ctrl(&hintr_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
-
-    printf("Host interrupt control\r\n");
-    printf("    Wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_W) ? "disabled" : "enabled");
-    printf("    Non wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_NW) ? "disabled" : "enabled");
-    printf("    Status FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_STATUS_FIFO) ? "disabled" : "enabled");
-    printf("    Debugging %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_DEBUG) ? "disabled" : "enabled");
-    printf("    Fault %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FAULT) ? "disabled" : "enabled");
-    printf("    Interrupt is %s.\r\n", (hintr_ctrl & BHI360_ICTL_ACTIVE_LOW) ? "active low" : "active high");
-    printf("    Interrupt is %s triggered.\r\n", (hintr_ctrl & BHI360_ICTL_EDGE) ? "pulse" : "level");
-    printf("    Interrupt pin drive is %s.\r\n", (hintr_ctrl & BHI360_ICTL_OPEN_DRAIN) ? "open drain" : "push-pull");
+    setup_host_int_ctrl(&bhy);
 
     /* Check if the sensor is ready to load firmware */
     rslt = bhi360_get_boot_status(&boot_status, &bhy);
@@ -163,7 +87,7 @@ int main(void)
 
     if (boot_status & BHI360_BST_HOST_INTERFACE_READY)
     {
-        upload_firmware(boot_status, &bhy);
+        upload_firmware(bhi360_firmware_image, sizeof(bhi360_firmware_image), &bhy);
 
         rslt = bhi360_get_kernel_version(&version, &bhy);
         print_api_error(rslt, &bhy);
@@ -172,12 +96,21 @@ int main(void)
             printf("Boot successful. Kernel version %u.\r\n", version);
         }
 
-        rslt = bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT, parse_meta_event, (void*)&accuracy, &bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT,
+                                                   bhi360_parse_meta_event,
+                                                   (void*)&accuracy,
+                                                   &bhy);
         print_api_error(rslt, &bhy);
-        rslt =
-            bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT_WU, parse_meta_event, (void*)&accuracy, &bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT_WU,
+                                                   bhi360_parse_meta_event,
+                                                   (void*)&accuracy,
+                                                   &bhy);
         print_api_error(rslt, &bhy);
-        rslt = bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_GYRO_PASS, parse_gyro, NULL, &bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_ACC_PASS, parse_3axis, NULL, &bhy);
+        print_api_error(rslt, &bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_ACC_RAW, parse_3axis, NULL, &bhy);
+        print_api_error(rslt, &bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_GYRO_RAW, parse_3axis, NULL, &bhy);
         print_api_error(rslt, &bhy);
 
         rslt = bhi360_get_and_process_fifo(work_buffer, WORK_BUFFER_SIZE, &bhy);
@@ -196,18 +129,55 @@ int main(void)
     rslt = bhi360_update_virtual_sensor_list(&bhy);
     print_api_error(rslt, &bhy);
 
-    sensor_conf.sample_rate = 100.0f; /* Read out data measured at 100Hz */
-    sensor_conf.latency = 0; /* Report immediately */
-    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_GYRO_PASS, &sensor_conf, &bhy);
-    print_api_error(rslt, &bhy);
-    printf("Enable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_GYRO_PASS), sensor_conf.sample_rate);
+    struct bhi360_system_param_phys_sensor_info phy_acc_info, phy_gyro_info, phy_mag_info;
 
-    rslt = bhi360_set_virt_sensor_range(BHI360_SENSOR_ID_GYRO_PASS, BHI360_GYRO_125DPS, &bhy); /* Dynamic Range set at 125
-                                                                                              * (0x7D) dps, so that the
-                                                                                              * largest gyro value printed
-                                                                                              * will not beyond the set
-                                                                                              * range (125)*/
+    /* Get the default range of accel and gyro */
+    rslt = bhi360_system_param_get_physical_sensor_info(PHYSICAL_ACCEL_ID, &phy_acc_info, &bhy);
     print_api_error(rslt, &bhy);
+    printf("Accel Range is %u\r\n", phy_acc_info.curr_range.u16_val);
+
+    rslt = bhi360_system_param_get_physical_sensor_info(PHYSICAL_GYRO_ID, &phy_gyro_info, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Gyro Range is %u\r\n", phy_gyro_info.curr_range.u16_val);
+    range[PHYSICAL_GYRO_ID] = phy_gyro_info.curr_range.u16_val;
+
+    /* Get the mag dynamic range which doesn't support to change */
+    rslt = bhi360_system_param_get_physical_sensor_info(PHYSICAL_MAG_ID, &phy_mag_info, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Mag Range is %u\r\n", phy_mag_info.curr_range.u16_val);
+    range[PHYSICAL_MAG_ID] = phy_mag_info.curr_range.u16_val;
+
+    /* Set the sensor dynamic range
+       1. The sensor ID must correspond to a specific physical sensor’s virtual sensor (either wake-up or non-wake-up).
+          It must also be for a physical sensor supported by the currently loaded firmware image.
+          Setting the dynamic range is not supported for any virtual sensor being derived from multiple physical sensors,
+          e.g. Rotation Vector.
+       2. If the same physical sensor range is configured via multiple virtual sensors, the highest dynamic range value
+          will be used. Lower range settings are not effective until the virtual sensor’s highest range is reduced.
+    */
+    rslt = bhi360_set_virt_sensor_range(BHI360_SENSOR_ID_ACC_PASS, BHI360_ACCEL_4G, &bhy);
+    print_api_error(rslt, &bhy);
+
+    rslt = bhi360_set_virt_sensor_range(BHI360_SENSOR_ID_ACC, BHI360_ACCEL_16G, &bhy);
+    print_api_error(rslt, &bhy);
+
+    rslt = bhi360_set_virt_sensor_range(BHI360_SENSOR_ID_ACC_RAW, BHI360_ACCEL_8G, &bhy);
+    print_api_error(rslt, &bhy);
+
+    rslt = bhi360_system_param_get_physical_sensor_info(PHYSICAL_ACCEL_ID, &phy_acc_info, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Accel Range is %u\r\n", phy_acc_info.curr_range.u16_val);
+    range[PHYSICAL_ACCEL_ID] = phy_acc_info.curr_range.u16_val;
+
+    sensor_conf.sample_rate = 10.0f; /* Read out data measured at 10Hz */
+    sensor_conf.latency = 0; /* Report immediately */
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_ACC_PASS, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Enable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_ACC_PASS), sensor_conf.sample_rate);
+
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_GYRO_RAW, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Enable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_GYRO_RAW), sensor_conf.sample_rate);
 
     while (rslt == BHI360_OK && loop < limit)
     {
@@ -225,10 +195,12 @@ int main(void)
     return rslt;
 }
 
-static void parse_gyro(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref)
+static void parse_3axis(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref)
 {
     struct bhi360_event_data_xyz data;
     float scaling_factor = SCALING_FACTOR_INVALID_LIMIT;
+    uint32_t s, ns;
+    uint64_t timestamp;
 
     if (!callback_info)
     {
@@ -237,145 +209,58 @@ static void parse_gyro(const struct bhi360_fifo_parse_data_info *callback_info, 
         return;
     }
 
-    bhi360_event_data_parse_xyz(callback_info->data_ptr, &data);
-    scaling_factor = get_sensor_dynamic_range_scaling(callback_info->sensor_id, (float)BHI360_GYRO_125DPS);
+    timestamp = *callback_info->time_stamp; /* Store the last timestamp */
+    timestamp = timestamp * 15625; /* Timestamp is now in nanoseconds */
+    s = (uint32_t)(timestamp / UINT64_C(1000000000));
+    ns = (uint32_t)(timestamp - (s * UINT64_C(1000000000)));
 
+    bhi360_event_data_parse_xyz(callback_info->data_ptr, &data);
+
+    scaling_factor = get_sensor_scaling(callback_info->sensor_id, range);
     if (scaling_factor > SCALING_FACTOR_INVALID_LIMIT)
     {
-        printf(" x: %f, y: %f, z: %f; unit: dps\r\n",
+#ifndef PC
+
+        printf("SID: %u; T: %lu.%09lu; x: %f, y: %f, z: %f;\r\n",
+               callback_info->sensor_id,
+               s,
+               ns,
                data.x * scaling_factor,
                data.y * scaling_factor,
                data.z * scaling_factor);
+#else
+        printf("SID: %u; T: %u.%09u; x: %f, y: %f, z: %f;\r\n",
+               callback_info->sensor_id,
+               s,
+               ns,
+               data.x * scaling_factor,
+               data.y * scaling_factor,
+               data.z * scaling_factor);
+#endif
     }
 }
 
-static void parse_meta_event(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref)
+static float get_sensor_scaling(uint8_t sensor_id, uint16_t dynamic_range[])
 {
-    (void)callback_ref;
-    uint8_t meta_event_type = callback_info->data_ptr[0];
-    uint8_t byte1 = callback_info->data_ptr[1];
-    uint8_t byte2 = callback_info->data_ptr[2];
-    uint8_t *accuracy = (uint8_t*)callback_ref;
-    char *event_text;
+    float scaling = -1.0f;
 
-    if (callback_info->sensor_id == BHI360_SYS_ID_META_EVENT)
+    if (sensor_id >= BHI360_SENSOR_ID_ACC_PASS && sensor_id <= BHI360_SENSOR_ID_ACC_RAW_WU)
     {
-        event_text = "[META EVENT]";
+        scaling = dynamic_range[PHYSICAL_ACCEL_ID] / 32768.0f;
     }
-    else if (callback_info->sensor_id == BHI360_SYS_ID_META_EVENT_WU)
+    else if (sensor_id >= BHI360_SENSOR_ID_GYRO_PASS && sensor_id <= BHI360_SENSOR_ID_GYRO_RAW_WU)
     {
-        event_text = "[META EVENT WAKE UP]";
+        scaling = dynamic_range[PHYSICAL_GYRO_ID] / 32768.0f;
+    }
+    else if (sensor_id >= BHI360_SENSOR_ID_MAG_PASS && sensor_id <= BHI360_SENSOR_ID_MAG_RAW_WU)
+    {
+        scaling = dynamic_range[PHYSICAL_MAG_ID] / 32768.0f;
     }
     else
     {
-        return;
+        printf("Sensor ID not supported for dynamic range scaling\r\n");
+        scaling = -1.0f; /* Do not apply the scaling factor */
     }
 
-    switch (meta_event_type)
-    {
-        case BHI360_META_EVENT_FLUSH_COMPLETE:
-            printf("%s Flush complete for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_SAMPLE_RATE_CHANGED:
-            printf("%s Sample rate changed for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_POWER_MODE_CHANGED:
-            printf("%s Power mode changed for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_ALGORITHM_EVENTS:
-            printf("%s Algorithm event\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_SENSOR_STATUS:
-            printf("%s Accuracy for sensor id %u changed to %u\r\n", event_text, byte1, byte2);
-            if (accuracy)
-            {
-                *accuracy = byte2;
-            }
-
-            break;
-        case BHI360_META_EVENT_BSX_DO_STEPS_MAIN:
-            printf("%s BSX event (do steps main)\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_BSX_DO_STEPS_CALIB:
-            printf("%s BSX event (do steps calib)\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_BSX_GET_OUTPUT_SIGNAL:
-            printf("%s BSX event (get output signal)\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_SENSOR_ERROR:
-            printf("%s Sensor id %u reported error 0x%02X\r\n", event_text, byte1, byte2);
-            break;
-        case BHI360_META_EVENT_FIFO_OVERFLOW:
-            printf("%s FIFO overflow\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_DYNAMIC_RANGE_CHANGED:
-            printf("%s Dynamic range changed for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_FIFO_WATERMARK:
-            printf("%s FIFO watermark reached\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_INITIALIZED:
-            printf("%s Firmware initialized. Firmware version %u\r\n", event_text, ((uint16_t)byte2 << 8) | byte1);
-            break;
-        case BHI360_META_TRANSFER_CAUSE:
-            printf("%s Transfer cause for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_SENSOR_FRAMEWORK:
-            printf("%s Sensor framework event for sensor id %u\r\n", event_text, byte1);
-            break;
-        case BHI360_META_EVENT_RESET:
-            printf("%s Reset event\r\n", event_text);
-            break;
-        case BHI360_META_EVENT_SPACER:
-            break;
-        default:
-            printf("%s Unknown meta event with id: %u\r\n", event_text, meta_event_type);
-            break;
-    }
-}
-
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev)
-{
-    if (rslt != BHI360_OK)
-    {
-        printf("%s\r\n", get_api_error(rslt));
-        if ((rslt == BHI360_E_IO) && (dev != NULL))
-        {
-            printf("%s\r\n", get_coines_error(dev->hif.intf_rslt));
-            dev->hif.intf_rslt = BHI360_INTF_RET_SUCCESS;
-        }
-
-        close_interfaces(intf);
-        exit(0);
-    }
-}
-
-static void upload_firmware(uint8_t boot_stat, struct bhi360_dev *dev)
-{
-    uint8_t sensor_error;
-    int8_t temp_rslt;
-    int8_t rslt = BHI360_OK;
-
-    printf("Loading firmware into RAM.\r\n");
-    rslt = bhi360_upload_firmware_to_ram(bhi360_firmware_image, sizeof(bhi360_firmware_image), dev);
-    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
-    if (sensor_error)
-    {
-        printf("%s\r\n", get_sensor_error_text(sensor_error));
-    }
-
-    print_api_error(rslt, dev);
-    print_api_error(temp_rslt, dev);
-
-    printf("Booting from RAM.\r\n");
-    rslt = bhi360_boot_from_ram(dev);
-
-    temp_rslt = bhi360_get_error_value(&sensor_error, dev);
-    if (sensor_error)
-    {
-        printf("%s\r\n", get_sensor_error_text(sensor_error));
-    }
-
-    print_api_error(rslt, dev);
-    print_api_error(temp_rslt, dev);
+    return scaling;
 }

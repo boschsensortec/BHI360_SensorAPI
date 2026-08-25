@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Bosch Sensortec GmbH. All rights reserved.
+ * Copyright (c) 2026 Bosch Sensortec GmbH. All rights reserved.
  *
  * BSD-3-Clause
  *
@@ -35,40 +35,42 @@
  *
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-
-#include "bhi360.h"
-#include "bhi360_parse.h"
 #include "common.h"
+#include "bhi360_parse.h"
 #include "bhi360_phy_sensor_ctrl_param.h"
-#include "bhi360_param_defs.h"
 
-#include "bhi360/Bosch_Shuttle3_BHI360_BMM350C_BMP580_BME688.fw.h"
+#include "bhi360/Bosch_Shuttle3_BHI360_BMM350_bsxsam_ndof.fw.h"
 
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev);
-static int8_t upload_firmware(struct bhi360_dev *dev);
 static void run_phy_accel_sample(struct bhi360_dev *dev);
 static void run_phy_gyro_sample(struct bhi360_dev *dev);
 static void run_phy_magnet_sample(struct bhi360_dev *dev);
-static void run_phy_wrist_wear_wakeup_sample(struct bhi360_dev *dev);
-static void run_phy_any_motion_sample(struct bhi360_dev *dev);
-static void run_phy_no_motion_sample(struct bhi360_dev *dev);
-static void run_phy_wrist_gesture_detector_sample(struct bhi360_dev *dev);
-static void run_phy_baro_type_1_sample(struct bhi360_dev *dev);
-static void run_phy_baro_type_2_sample(struct bhi360_dev *dev);
-static void run_phy_step_counter_sample(struct bhi360_dev *dev);
 
-enum bhi360_intf intf;
+#define PARSE_DATA_WINDOW_SIZE  UINT16_C(3000)
+
+/**
+* @brief Function to parse 3axis format
+* @param[in] callback_info : Pointer to callback information
+* @param[in] callback_ref  : Pointer to callback reference
+*/
+static void parse_3axis_data(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref);
+
+static void parse_meta_event(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref);
+
+#define ACC_ACCURACY_INDEX      UINT8_C(0)
+#define GYRO_ACCURACY_INDEX     UINT8_C(1)
+#define MAG_ACCURACY_INDEX      UINT8_C(2)
 
 int main(void)
 {
-    uint8_t chip_id = 0;
+    enum bhi360_intf intf;
     uint16_t version = 0;
-    int8_t rslt;
+    int8_t rslt = BHI360_OK;
     struct bhi360_dev bhy;
-    uint8_t hintr_ctrl, hif_ctrl, boot_status;
+    uint8_t boot_status = 0;
+    uint8_t work_buffer[WORK_BUFFER_SIZE] = { 0 };
+    struct bhi360_virtual_sensor_conf_param_conf sensor_conf = { 0 };
+    uint8_t accuracy[3] = { 0 }; /* Accuracy is reported as a meta event. It is being printed alongside the data */
 
 #ifdef BHI360_USE_I2C
     intf = BHI360_I2C_INTERFACE;
@@ -78,63 +80,9 @@ int main(void)
 
     setup_interfaces(true, intf); /* Perform a power on reset */
 
-#ifdef BHI360_USE_I2C
-    rslt = bhi360_init(BHI360_I2C_INTERFACE,
-                       bhi360_i2c_read,
-                       bhi360_i2c_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#else
-    rslt = bhi360_init(BHI360_SPI_INTERFACE,
-                       bhi360_spi_read,
-                       bhi360_spi_write,
-                       bhi360_delay_us,
-                       BHI360_RD_WR_LEN,
-                       NULL,
-                       &bhy);
-#endif
-    print_api_error(rslt, &bhy);
+    init_sensor(&bhy, intf);
 
-    rslt = bhi360_soft_reset(&bhy);
-    print_api_error(rslt, &bhy);
-
-    rslt = bhi360_get_chip_id(&chip_id, &bhy);
-    print_api_error(rslt, &bhy);
-
-    /* Check for a valid Chip ID */
-    if (chip_id == BHI360_CHIP_ID)
-    {
-        printf("Chip ID read 0x%X\r\n", chip_id);
-    }
-    else
-    {
-        printf("Device not found. Chip ID read 0x%X\r\n", chip_id);
-    }
-
-    /* Check the interrupt pin and FIFO configurations. Disable status and debug */
-    hintr_ctrl = BHI360_ICTL_DISABLE_STATUS_FIFO | BHI360_ICTL_DISABLE_DEBUG;
-
-    rslt = bhi360_set_host_interrupt_ctrl(hintr_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
-    rslt = bhi360_get_host_interrupt_ctrl(&hintr_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
-
-    printf("Host interrupt control\r\n");
-    printf("    Wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_W) ? "disabled" : "enabled");
-    printf("    Non wake up FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FIFO_NW) ? "disabled" : "enabled");
-    printf("    Status FIFO %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_STATUS_FIFO) ? "disabled" : "enabled");
-    printf("    Debugging %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_DEBUG) ? "disabled" : "enabled");
-    printf("    Fault %s.\r\n", (hintr_ctrl & BHI360_ICTL_DISABLE_FAULT) ? "disabled" : "enabled");
-    printf("    Interrupt is %s.\r\n", (hintr_ctrl & BHI360_ICTL_ACTIVE_LOW) ? "active low" : "active high");
-    printf("    Interrupt is %s triggered.\r\n", (hintr_ctrl & BHI360_ICTL_EDGE) ? "pulse" : "level");
-    printf("    Interrupt pin drive is %s.\r\n", (hintr_ctrl & BHI360_ICTL_OPEN_DRAIN) ? "open drain" : "push-pull");
-
-    /* Configure the host interface */
-    hif_ctrl = 0;
-    rslt = bhi360_set_host_intf_ctrl(hif_ctrl, &bhy);
-    print_api_error(rslt, &bhy);
+    setup_host_int_ctrl(&bhy);
 
     /* Check if the sensor is ready to load firmware */
     rslt = bhi360_get_boot_status(&boot_status, &bhy);
@@ -142,31 +90,9 @@ int main(void)
 
     if (boot_status & BHI360_BST_HOST_INTERFACE_READY)
     {
-        uint8_t sensor_error;
-        int8_t temp_rslt;
         printf("Loading firmware.\r\n");
 
-        rslt = upload_firmware(&bhy);
-        temp_rslt = bhi360_get_error_value(&sensor_error, &bhy);
-        if (sensor_error)
-        {
-            printf("%s\r\n", get_sensor_error_text(sensor_error));
-        }
-
-        print_api_error(rslt, &bhy);
-        print_api_error(temp_rslt, &bhy);
-
-        printf("Booting from RAM.\r\n");
-        rslt = bhi360_boot_from_ram(&bhy);
-
-        temp_rslt = bhi360_get_error_value(&sensor_error, &bhy);
-        if (sensor_error)
-        {
-            printf("%s\r\n", get_sensor_error_text(sensor_error));
-        }
-
-        print_api_error(rslt, &bhy);
-        print_api_error(temp_rslt, &bhy);
+        upload_firmware(bhi360_firmware_image, sizeof(bhi360_firmware_image), &bhy);
 
         rslt = bhi360_get_kernel_version(&version, &bhy);
         print_api_error(rslt, &bhy);
@@ -175,16 +101,35 @@ int main(void)
             printf("Boot successful. Kernel version %u.\r\n", version);
         }
 
-        run_phy_accel_sample(&bhy);
-        run_phy_gyro_sample(&bhy);
-        run_phy_magnet_sample(&bhy);
-        run_phy_wrist_wear_wakeup_sample(&bhy);
-        run_phy_any_motion_sample(&bhy);
-        run_phy_no_motion_sample(&bhy);
-        run_phy_wrist_gesture_detector_sample(&bhy);
-        run_phy_baro_type_1_sample(&bhy);
-        run_phy_baro_type_2_sample(&bhy);
-        run_phy_step_counter_sample(&bhy);
+        rslt = bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT, parse_meta_event, (void*)accuracy, &bhy);
+        print_api_error(rslt, &bhy);
+        rslt =
+            bhi360_register_fifo_parse_callback(BHI360_SYS_ID_META_EVENT_WU, parse_meta_event, (void*)accuracy, &bhy);
+        print_api_error(rslt, &bhy);
+
+        rslt =
+            bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_ACC,
+                                                parse_3axis_data,
+                                                (void*)&accuracy[ACC_ACCURACY_INDEX],
+                                                &bhy);
+        print_api_error(rslt, &bhy);
+
+        rslt =
+            bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_GYRO,
+                                                parse_3axis_data,
+                                                (void*)&accuracy[GYRO_ACCURACY_INDEX],
+                                                &bhy);
+        print_api_error(rslt, &bhy);
+
+        rslt =
+            bhi360_register_fifo_parse_callback(BHI360_SENSOR_ID_MAG,
+                                                parse_3axis_data,
+                                                (void*)&accuracy[MAG_ACCURACY_INDEX],
+                                                &bhy);
+        print_api_error(rslt, &bhy);
+
+        rslt = bhi360_get_and_process_fifo(work_buffer, WORK_BUFFER_SIZE, &bhy);
+        print_api_error(rslt, &bhy);
     }
     else
     {
@@ -195,65 +140,69 @@ int main(void)
         return 0;
     }
 
+    run_phy_accel_sample(&bhy);
+    run_phy_gyro_sample(&bhy);
+    run_phy_magnet_sample(&bhy);
+
+    /* Update the callback table to enable parsing of sensor data */
+    rslt = bhi360_update_virtual_sensor_list(&bhy);
+    print_api_error(rslt, &bhy);
+
+    /* Enable accelerometer, gyroscope, and magnetometer virtual sensors */
+    sensor_conf.sample_rate = BHI360_ODR_100_HZ; /* Read out data measured at 100Hz */
+    sensor_conf.latency = 0; /* Report immediately */
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_ACC, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("\r\nEnable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_ACC), sensor_conf.sample_rate);
+
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_GYRO, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Enable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_GYRO), sensor_conf.sample_rate);
+
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_MAG, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Enable %s at %.2fHz.\r\n", get_sensor_name(BHI360_SENSOR_ID_MAG), sensor_conf.sample_rate);
+
+    uint32_t curr_ts;
+    uint32_t start_ts = coines_get_millis();
+    do
+    {
+        curr_ts = coines_get_millis();
+
+        if (get_interrupt_status())
+        {
+            /* Data from the FIFO is read and the relevant callbacks if registered are called */
+            rslt = bhi360_get_and_process_fifo(work_buffer, WORK_BUFFER_SIZE, &bhy);
+            print_api_error(rslt, &bhy);
+        }
+    } while (rslt == BHI360_OK && (curr_ts - start_ts) < PARSE_DATA_WINDOW_SIZE);
+
+    /* Disable accelerometer, gyroscope, and magnetometer virtual sensors */
+    sensor_conf.sample_rate = BHI360_ODR_0_HZ; /*! Disable the sensor by setting sample rate to 0Hz */
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_ACC, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("\nDisable %s.\r\n", get_sensor_name(BHI360_SENSOR_ID_ACC));
+
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_GYRO, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Disable %s.\r\n", get_sensor_name(BHI360_SENSOR_ID_GYRO));
+
+    rslt = bhi360_virtual_sensor_conf_param_set_cfg(BHI360_SENSOR_ID_MAG, &sensor_conf, &bhy);
+    print_api_error(rslt, &bhy);
+    printf("Disable %s.\r\n", get_sensor_name(BHI360_SENSOR_ID_MAG));
+
     close_interfaces(intf);
-
-    return rslt;
-}
-
-static void print_api_error(int8_t rslt, struct bhi360_dev *dev)
-{
-    if (rslt != BHI360_OK)
-    {
-        printf("%s\r\n", get_api_error(rslt));
-        if ((rslt == BHI360_E_IO) && (dev != NULL))
-        {
-            printf("%s\r\n", get_coines_error(dev->hif.intf_rslt));
-            dev->hif.intf_rslt = BHI360_INTF_RET_SUCCESS;
-        }
-
-        exit(0);
-    }
-}
-
-static int8_t upload_firmware(struct bhi360_dev *dev)
-{
-    uint32_t incr = 256; /* Max command packet size */
-    uint32_t len = sizeof(bhi360_firmware_image);
-    int8_t rslt = BHI360_OK;
-
-    if ((incr % 4) != 0) /* Round off to higher 4 bytes */
-    {
-        incr = ((incr >> 2) + 1) << 2;
-    }
-
-    for (uint32_t i = 0; (i < len) && (rslt == BHI360_OK); i += incr)
-    {
-        if (incr > (len - i)) /* If last payload */
-        {
-            incr = len - i;
-            if ((incr % 4) != 0) /* Round off to higher 4 bytes */
-            {
-                incr = ((incr >> 2) + 1) << 2;
-            }
-        }
-
-        rslt = bhi360_upload_firmware_to_ram_partly(&bhi360_firmware_image[i], len, i, incr, dev);
-
-        printf("%.2f%% complete\r", (float)(i + incr) / (float)len * 100.0f);
-    }
-
-    printf("\n");
 
     return rslt;
 }
 
 static void run_phy_accel_sample(struct bhi360_dev *dev)
 {
-    int8_t rslt;
-    uint8_t mode;
-    uint8_t status;
-    bhi360_phy_sensor_ctrl_param_accel_fast_offset_calib calib;
-    bhi360_phy_sensor_ctrl_param_accel_axis_remap remap;
+    int8_t rslt = BHI360_OK;
+    uint8_t mode = 0;
+    uint8_t status = 0;
+    bhi360_phy_sensor_ctrl_param_accel_fast_offset_calib calib = { 0 };
+    bhi360_phy_sensor_ctrl_param_accel_axis_remap remap = { 0 };
 
     printf("Get accelerometer calibration.\r\n");
     rslt = bhi360_phy_sensor_ctrl_param_accel_get_foc_calibration(&calib, dev);
@@ -285,11 +234,11 @@ static void run_phy_accel_sample(struct bhi360_dev *dev)
     printf("    Accelerometer remapping Z-axis: %d\r\n", remap.map_z_axis);
     printf("    Accelerometer remapping Z-axis sign: %d\r\n", remap.map_z_axis_sign);
     printf("Change accelerometer axis remapping.\r\n");
-    remap.map_x_axis = 1;
+    remap.map_x_axis = 0;
     remap.map_x_axis_sign = 1;
     remap.map_y_axis = 1;
     remap.map_y_axis_sign = 1;
-    remap.map_z_axis = 1;
+    remap.map_z_axis = 2;
     remap.map_z_axis_sign = 1;
     rslt = bhi360_phy_sensor_ctrl_param_accel_set_axis_remapping(&remap, dev);
     print_api_error(rslt, dev);
@@ -307,24 +256,42 @@ static void run_phy_accel_sample(struct bhi360_dev *dev)
     rslt = bhi360_phy_sensor_ctrl_param_accel_get_nvm_status(&status, dev);
     print_api_error(rslt, dev);
     printf("    Accelerometer NVM writing status: %d\r\n", status);
-    printf("Trigger a NVM writing for accelerometer.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_accel_trigger_nvm_writing(dev);
-    print_api_error(rslt, dev);
-    printf("Get accelerometer NVM writing status.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_accel_get_nvm_status(&status, dev);
-    print_api_error(rslt, dev);
-    printf("    Accelerometer NVM writing status: %d\r\n", status);
 }
 
 static void run_phy_gyro_sample(struct bhi360_dev *dev)
 {
-    int8_t rslt;
-    uint8_t mode;
-    uint8_t status;
-    uint8_t ois_conf;
-    uint8_t fast_startup_conf;
-    uint8_t auto_trim_conf;
-    bhi360_phy_sensor_ctrl_param_gyro_fast_offset_calib calib;
+    int8_t rslt = BHI360_OK;
+    uint8_t mode = 0;
+    uint8_t status = 0;
+    uint8_t ois_conf = 0;
+    uint8_t fast_startup_conf = 0;
+    uint8_t auto_trim_conf = 0;
+    bhi360_phy_sensor_ctrl_param_gyro_fast_offset_calib calib = { 0 };
+    bhi360_phy_sensor_ctrl_param_gyro_manual_sensitivity_comp manual_sens_comp = { 0 };
+
+    printf("Get gyroscope manual sensitivity compensation.\r\n");
+    rslt = bhi360_phy_sensor_ctrl_param_gyro_get_manual_sensitivity_comp(&manual_sens_comp, dev);
+    print_api_error(rslt, dev);
+
+    printf("    Gyroscope manual sensitivity compensation X-axis: 0x%X\r\n", manual_sens_comp.gain_update_x);
+    printf("    Gyroscope manual sensitivity compensation Y-axis: 0x%X\r\n", manual_sens_comp.gain_update_y);
+    printf("    Gyroscope manual sensitivity compensation Z-axis: 0x%X\r\n", manual_sens_comp.gain_update_z);
+
+    manual_sens_comp.gain_update_x = 0x300;
+    manual_sens_comp.gain_update_y = 0x400;
+    manual_sens_comp.gain_update_z = 0x500;
+
+    rslt = bhi360_phy_sensor_ctrl_param_gyro_set_manual_sensitivity_comp(&manual_sens_comp, dev);
+    print_api_error(rslt, dev);
+
+    memset(&manual_sens_comp, 0, sizeof(manual_sens_comp));
+
+    printf("Get gyroscope manual sensitivity compensation again.\r\n");
+    rslt = bhi360_phy_sensor_ctrl_param_gyro_get_manual_sensitivity_comp(&manual_sens_comp, dev);
+    print_api_error(rslt, dev);
+    printf("    Gyroscope manual sensitivity compensation X-axis: 0x%X\r\n", manual_sens_comp.gain_update_x);
+    printf("    Gyroscope manual sensitivity compensation Y-axis: 0x%X\r\n", manual_sens_comp.gain_update_y);
+    printf("    Gyroscope manual sensitivity compensation Z-axis: 0x%X\r\n", manual_sens_comp.gain_update_z);
 
     printf("Get gyroscope calibration.\r\n");
     rslt = bhi360_phy_sensor_ctrl_param_gyro_get_foc_calibration(&calib, dev);
@@ -389,19 +356,13 @@ static void run_phy_gyro_sample(struct bhi360_dev *dev)
     rslt = bhi360_phy_sensor_ctrl_param_gyro_get_nvm_status(&status, dev);
     print_api_error(rslt, dev);
     printf("    Gyroscope NVM writing status: %d\r\n", status);
-    printf("Trigger a NVM writing for gyroscope.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_gyro_trigger_nvm_writing(dev);
-    print_api_error(rslt, dev);
-    printf("Get gyroscope NVM writing status.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_gyro_get_nvm_status(&status, dev);
-    print_api_error(rslt, dev);
-    printf("    Gyroscope NVM writing status: %d\r\n", status);
+
 }
 
 static void run_phy_magnet_sample(struct bhi360_dev *dev)
 {
-    int8_t rslt;
-    uint8_t mode;
+    int8_t rslt = BHI360_OK;
+    uint8_t mode = 0;
 
     printf("Get magnetometer power mode.\r\n");
     rslt = bhi360_phy_sensor_ctrl_param_magnet_get_power_mode(&mode, dev);
@@ -417,252 +378,180 @@ static void run_phy_magnet_sample(struct bhi360_dev *dev)
     printf("    Magnetometer power mode: %d\r\n", mode);
 }
 
-static void run_phy_wrist_wear_wakeup_sample(struct bhi360_dev *dev)
+static void parse_3axis_data(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref)
 {
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_wrist_wear_wakeup conf;
+    struct bhi360_event_data_xyz data;
+    uint32_t s, ns;
+    uint64_t timestamp;
 
-    printf("Get Wrist Wear Wakeup configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_wrist_wear_wakeup_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Wrist Wear Wakeup configuration:\r\n");
-    printf("     - <min_angle_focus>: %u\r\n", conf.min_angle_focus);
-    printf("     - <min_angle_non_focus>: %u\r\n", conf.min_angle_non_focus);
-    printf("     - <angle_landscape_right>: %u\r\n", conf.angle_landscape_right);
-    printf("     - <angle_landscape_left>: %u\r\n", conf.angle_landscape_left);
-    printf("     - <angle_portrait_down>: %u\r\n", conf.angle_portrait_down);
-    printf("     - <angle_portrait_up>: %u\r\n", conf.angle_portrait_up);
-    printf("     - <min_dur_moved>: %u\r\n", conf.min_dur_moved);
-    printf("     - <min_dur_quite>: %u\r\n", conf.min_dur_quite);
-    printf("Change Wrist Wear Wakeup configuration.\r\n");
-    conf.min_angle_focus = 1024;
-    rslt = bhi360_phy_sensor_ctrl_param_set_wrist_wear_wakeup_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get Wrist Wear Wakeup configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_wrist_wear_wakeup_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Wrist Wear Wakeup configuration:\r\n");
-    printf("     - <min_angle_focus>: %u\r\n", conf.min_angle_focus);
-    printf("     - <min_angle_non_focus>: %u\r\n", conf.min_angle_non_focus);
-    printf("     - <angle_landscape_right>: %u\r\n", conf.angle_landscape_right);
-    printf("     - <angle_landscape_left>: %u\r\n", conf.angle_landscape_left);
-    printf("     - <angle_portrait_down>: %u\r\n", conf.angle_portrait_down);
-    printf("     - <angle_portrait_up>: %u\r\n", conf.angle_portrait_up);
-    printf("     - <min_dur_moved>: %u\r\n", conf.min_dur_moved);
-    printf("     - <min_dur_quite>: %u\r\n", conf.min_dur_quite);
-}
-static void run_phy_any_motion_sample(struct bhi360_dev *dev)
-{
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_any_motion conf;
+    float scaling_factor = 0.0f;
 
-    printf("Get Any Motion configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_any_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Any Motion configuration:\r\n");
-    printf("     - <duration>: %u\r\n", conf.duration);
-    printf("     - <axis_sel>: %u\r\n", conf.axis_sel);
-    printf("     - <threshold>: %u\r\n", conf.threshold);
-    printf("Change Any Motion configuration.\r\n");
-    conf.duration = 10;
-    rslt = bhi360_phy_sensor_ctrl_param_set_any_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get Any Motion configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_any_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Any Motion configuration:\r\n");
-    printf("     - <duration>: %u\r\n", conf.duration);
-    printf("     - <axis_sel>: %u\r\n", conf.axis_sel);
-    printf("     - <threshold>: %u\r\n", conf.threshold);
-}
+    if (!callback_info)
+    {
+        printf("Null reference\r\n");
 
-static void run_phy_no_motion_sample(struct bhi360_dev *dev)
-{
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_no_motion conf;
+        return;
+    }
 
-    printf("Get No Motion configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_no_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    No Motion configuration:\r\n");
-    printf("     - <duration>: %u\r\n", conf.duration);
-    printf("     - <axis_sel>: %u\r\n", conf.axis_sel);
-    printf("     - <threshold>: %u\r\n", conf.threshold);
-    printf("Change No Motion configuration.\r\n");
-    conf.duration = 10;
-    rslt = bhi360_phy_sensor_ctrl_param_set_no_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get No Motion configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_no_motion_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    No Motion configuration:\r\n");
-    printf("     - <duration>: %u\r\n", conf.duration);
-    printf("     - <axis_sel>: %u\r\n", conf.axis_sel);
-    printf("     - <threshold>: %u\r\n", conf.threshold);
+    if (callback_info->sensor_id >= BHI360_SENSOR_ID_ACC && callback_info->sensor_id <= BHI360_SENSOR_ID_ACC_RAW_WU)
+    {
+        scaling_factor = 1.0f / 4096.0f;
+    }
+    else if (callback_info->sensor_id >= BHI360_SENSOR_ID_GYRO &&
+             callback_info->sensor_id <= BHI360_SENSOR_ID_GYRO_RAW_WU)
+    {
+        scaling_factor = 2000.0f / 32768.0f;
+    }
+    else if (callback_info->sensor_id >= BHI360_SENSOR_ID_MAG &&
+             callback_info->sensor_id <= BHI360_SENSOR_ID_MAG_RAW_WU)
+    {
+        scaling_factor = 2000.0f / 32768.0f;
+    }
+
+    uint8_t *accuracy = (uint8_t*)callback_ref;
+
+    bhi360_event_data_parse_xyz(callback_info->data_ptr, &data);
+
+    timestamp = *callback_info->time_stamp; /* Store the last timestamp */
+    timestamp = timestamp * 15625; /* Timestamp is now in nanoseconds */
+    s = (uint32_t)(timestamp / UINT64_C(1000000000));
+    ns = (uint32_t)(timestamp - (s * UINT64_C(1000000000)));
+
+#ifndef PC
+    printf("SID: %u; T: %lu.%09lu; x: %f, y: %f, z: %f; acc: %u\r\n",
+           callback_info->sensor_id,
+           s,
+           ns,
+           data.x * scaling_factor,
+           data.y * scaling_factor,
+           data.z * scaling_factor,
+           *accuracy);
+#else
+    printf("SID: %u; T: %u.%09u; x: %f, y: %f, z: %f; acc: %u\r\n",
+           callback_info->sensor_id,
+           s,
+           ns,
+           data.x * scaling_factor,
+           data.y * scaling_factor,
+           data.z * scaling_factor,
+           *accuracy);
+#endif
 }
 
-static void run_phy_wrist_gesture_detector_sample(struct bhi360_dev *dev)
+static void parse_meta_event_extended(uint8_t meta_event_type, uint8_t byte1, uint8_t byte2, char*event_text)
 {
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_wrist_gesture_detector conf;
-
-    printf("Get Wrist Gesture Detector configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_wrist_gesture_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Wrist Gesture Detector configuration:\r\n");
-    printf("     - <min_flick_peak_y_thres>: 0x%04x\r\n", conf.min_flick_peak_y_thres);
-    printf("     - <min_flick_peak_z_thres>: 0x%04x\r\n", conf.min_flick_peak_z_thres);
-    printf("     - <gravity_bounds_x_pos>: 0x%04x\r\n", conf.gravity_bounds_x_pos);
-    printf("     - <gravity_bounds_x_neg>: 0x%04x\r\n", conf.gravity_bounds_x_neg);
-    printf("     - <gravity_bounds_y_neg>: 0x%04x\r\n", conf.gravity_bounds_y_neg);
-    printf("     - <gravity_bounds_z_neg>: 0x%04x\r\n", conf.gravity_bounds_z_neg);
-    printf("     - <flick_peak_decay_coeff>: 0x%04x\r\n", conf.flick_peak_decay_coeff);
-    printf("     - <lp_mean_filter_coeff>: 0x%04x\r\n", conf.lp_mean_filter_coeff);
-    printf("     - <max_duration_jiggle_peaks>: 0x%04x\r\n", conf.max_duration_jiggle_peaks);
-    printf("     - <device_pos>: 0x%02x\r\n", conf.device_pos);
-    printf("Change Wrist Gesture Detector configuration.\r\n");
-    conf.min_flick_peak_y_thres = 0x3E8U;
-    rslt = bhi360_phy_sensor_ctrl_param_set_wrist_gesture_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get Wrist Gesture Detector configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_wrist_gesture_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Wrist Gesture Detector configuration:\r\n");
-    printf("     - <min_flick_peak_y_thres>: 0x%04x\r\n", conf.min_flick_peak_y_thres);
-    printf("     - <min_flick_peak_z_thres>: 0x%04x\r\n", conf.min_flick_peak_z_thres);
-    printf("     - <gravity_bounds_x_pos>: 0x%04x\r\n", conf.gravity_bounds_x_pos);
-    printf("     - <gravity_bounds_x_neg>: 0x%04x\r\n", conf.gravity_bounds_x_neg);
-    printf("     - <gravity_bounds_y_neg>: 0x%04x\r\n", conf.gravity_bounds_y_neg);
-    printf("     - <gravity_bounds_z_neg>: 0x%04x\r\n", conf.gravity_bounds_z_neg);
-    printf("     - <flick_peak_decay_coeff>: 0x%04x\r\n", conf.flick_peak_decay_coeff);
-    printf("     - <lp_mean_filter_coeff>: 0x%04x\r\n", conf.lp_mean_filter_coeff);
-    printf("     - <max_duration_jiggle_peaks>: 0x%04x\r\n", conf.max_duration_jiggle_peaks);
-    printf("     - <device_pos>: 0x%02x\r\n", conf.device_pos);
+    switch (meta_event_type)
+    {
+        case BHI360_META_EVENT_FLUSH_COMPLETE:
+            printf("%s Flush complete for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_SAMPLE_RATE_CHANGED:
+            printf("%s Sample rate changed for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_POWER_MODE_CHANGED:
+            printf("%s Power mode changed for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_SYSTEM_ERROR:
+            printf("%s System error event, Error Register: %u, Interrupt State Register: %u\r\n",
+                   event_text,
+                   byte1,
+                   byte2);
+            break;
+        case BHI360_META_EVENT_ALGORITHM_EVENTS:
+            printf("%s Algorithm event\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_BSX_DO_STEPS_MAIN:
+            printf("%s BSX event (do steps main)\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_BSX_DO_STEPS_CALIB:
+            printf("%s BSX event (do steps calib)\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_BSX_GET_OUTPUT_SIGNAL:
+            printf("%s BSX event (get output signal)\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_SENSOR_ERROR:
+            printf("%s Sensor id %u reported error 0x%02X\r\n", event_text, byte1, byte2);
+            break;
+        case BHI360_META_EVENT_FIFO_OVERFLOW:
+            printf("%s FIFO overflow\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_DYNAMIC_RANGE_CHANGED:
+            printf("%s Dynamic range changed for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_FIFO_WATERMARK:
+            printf("%s FIFO watermark reached\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_INITIALIZED:
+            printf("%s Firmware initialized. Firmware version %u\r\n", event_text, ((uint16_t)byte2 << 8) | byte1);
+            break;
+        case BHI360_META_TRANSFER_CAUSE:
+            printf("%s Transfer cause for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_SENSOR_FRAMEWORK:
+            printf("%s Sensor framework event for sensor id %u\r\n", event_text, byte1);
+            break;
+        case BHI360_META_EVENT_RESET:
+            printf("%s Reset event\r\n", event_text);
+            break;
+        case BHI360_META_EVENT_SPACER:
+            break;
+    }
 }
 
-static void run_phy_baro_type_1_sample(struct bhi360_dev *dev)
+static void parse_meta_event(const struct bhi360_fifo_parse_data_info *callback_info, void *callback_ref)
 {
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_baro_type_1 conf;
+    (void)callback_ref;
+    uint8_t meta_event_type = callback_info->data_ptr[0];
+    uint8_t byte1 = callback_info->data_ptr[1];
+    uint8_t byte2 = callback_info->data_ptr[2];
+    uint8_t *accuracy = (uint8_t*)callback_ref;
+    char *event_text;
 
-    printf("Get barometer pressure type 1 configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_baro_get_press_type_1_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Barometer pressure type 1 configuration:\r\n");
-    printf("     - <osr_p>: %u\r\n", conf.osr_p);
-    printf("     - <osr_t>: %u\r\n", conf.osr_t);
-    printf("     - <iir_filter>: %u\r\n", conf.iir_filter);
-    printf("Change barometer pressure type 1 configuration.\r\n");
-    conf.osr_p = 1;
-    rslt = bhi360_phy_sensor_ctrl_param_baro_set_press_type_1_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get barometer pressure type 1 configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_baro_get_press_type_1_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Barometer pressure type 1 configuration:\r\n");
-    printf("     - <osr_p>: %u\r\n", conf.osr_p);
-    printf("     - <osr_t>: %u\r\n", conf.osr_t);
-    printf("     - <iir_filter>: %u\r\n", conf.iir_filter);
-}
+    if (callback_info->sensor_id == BHI360_SYS_ID_META_EVENT)
+    {
+        event_text = "[META EVENT]";
+    }
+    else if (callback_info->sensor_id == BHI360_SYS_ID_META_EVENT_WU)
+    {
+        event_text = "[META EVENT WAKE UP]";
+    }
+    else
+    {
+        return;
+    }
 
-static void run_phy_baro_type_2_sample(struct bhi360_dev *dev)
-{
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_baro_type_2 conf;
+    switch (meta_event_type)
+    {
+        case BHI360_META_EVENT_SENSOR_STATUS:
+            printf("%s Accuracy for sensor id %u changed to %u\r\n", event_text, byte1, byte2);
+            if (accuracy)
+            {
+                uint8_t sensor_id = byte1;
+                switch (sensor_id)
+                {
+                    case BHI360_SENSOR_ID_ACC_BIAS:
+                    case BHI360_SENSOR_ID_ACC:
+                        accuracy[ACC_ACCURACY_INDEX] = byte2;
 
-    printf("Get barometer pressure type 2 configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_baro_get_press_type_2_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Barometer pressure type 2 configuration:\r\n");
-    printf("     - <osr_p>: %u\r\n", conf.osr_p);
-    printf("     - <osr_t>: %u\r\n", conf.osr_t);
-    printf("     - <iir_filter_p>: %u\r\n", conf.iir_filter_p);
-    printf("     - <iir_filter_t>: %u\r\n", conf.iir_filter_t);
-    printf("     - <dsp_config>: %u\r\n", conf.dsp_config);
-    printf("Change barometer pressure type 2 configuration.\r\n");
-    conf.osr_t = 1;
-    rslt = bhi360_phy_sensor_ctrl_param_baro_set_press_type_2_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get barometer pressure type 2 configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_baro_get_press_type_2_cfg(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Barometer pressure type 2 configuration:\r\n");
-    printf("     - <osr_p>: %u\r\n", conf.osr_p);
-    printf("     - <osr_t>: %u\r\n", conf.osr_t);
-    printf("     - <iir_filter_p>: %u\r\n", conf.iir_filter_p);
-    printf("     - <iir_filter_t>: %u\r\n", conf.iir_filter_t);
-    printf("     - <dsp_config>: %u\r\n", conf.dsp_config);
-}
+                        break;
+                    case BHI360_SENSOR_ID_GYRO_BIAS:
+                    case BHI360_SENSOR_ID_GYRO:
+                        accuracy[GYRO_ACCURACY_INDEX] = byte2;
 
-static void run_phy_step_counter_sample(struct bhi360_dev *dev)
-{
-    int8_t rslt;
-    bhi360_phy_sensor_ctrl_param_step_counter conf;
+                        break;
+                    case BHI360_SENSOR_ID_MAG_BIAS:
+                    case BHI360_SENSOR_ID_MAG:
+                        accuracy[MAG_ACCURACY_INDEX] = byte2;
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-    printf("Get Step Counter configuration.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_step_counter_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Step Counter configuration:\r\n");
-    printf("     - <env_min_dist_up>: %u\r\n", conf.env_min_dist_up);
-    printf("     - <env_coef_up>: %u\r\n", conf.env_coef_up);
-    printf("     - <env_min_dist_down>: %u\r\n", conf.env_min_dist_down);
-    printf("     - <env_coef_down>: %u\r\n", conf.env_coef_down);
-    printf("     - <step_buffer_size>: %u\r\n", conf.step_buffer_size);
-    printf("     - <mean_val_decay>: %u\r\n", conf.mean_val_decay);
-    printf("     - <mean_step_dur>: %u\r\n", conf.mean_step_dur);
-    printf("     - <filter_coeff_b2>: %u\r\n", conf.filter_coeff_b2);
-    printf("     - <filter_coeff_b1>: %u\r\n", conf.filter_coeff_b1);
-    printf("     - <filter_coeff_b0>: %u\r\n", conf.filter_coeff_b0);
-    printf("     - <filter_coeff_a2>: %u\r\n", conf.filter_coeff_a2);
-    printf("     - <filter_coeff_a1>: %u\r\n", conf.filter_coeff_a1);
-    printf("     - <filter_cascade_enabled>: %u\r\n", conf.filter_cascade_enabled);
-    printf("     - <peak_duration_min_walking>: %u\r\n", conf.peak_duration_min_walking);
-    printf("     - <peak_duration_min_running>: %u\r\n", conf.peak_duration_min_running);
-    printf("     - <step_duration_max>: %u\r\n", conf.step_duration_max);
-    printf("     - <step_duration_window>: %u\r\n", conf.step_duration_window);
-    printf("     - <half_step_enabled>: %u\r\n", conf.half_step_enabled);
-    printf("     - <activity_detection_factor>: %u\r\n", conf.activity_detection_factor);
-    printf("     - <activity_detection_thres>: %u\r\n", conf.activity_detection_thres);
-    printf("     - <step_counter_increment>: %u\r\n", conf.step_counter_increment);
-    printf("     - <step_duration_pp_enabled>: %u\r\n", conf.step_duration_pp_enabled);
-    printf("     - <step_dur_thres>: %u\r\n", conf.step_dur_thres);
-    printf("     - <en_mcr_pp>: %u\r\n", conf.en_mcr_pp);
-    printf("     - <mcr_thres>: %u\r\n", conf.mcr_thres);
-    printf("     - <sc_26>: %u\r\n", conf.sc_26);
-    printf("     - <sc_27>: %u\r\n", conf.sc_27);
-    printf("Change Step Counter configuration.\r\n");
-    conf.env_min_dist_up = 10;
-    rslt = bhi360_phy_sensor_ctrl_param_set_step_counter_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("Get Step Counter configuration again.\r\n");
-    rslt = bhi360_phy_sensor_ctrl_param_get_step_counter_config(&conf, dev);
-    print_api_error(rslt, dev);
-    printf("    Step Counter configuration:\r\n");
-    printf("     - <env_min_dist_up>: %u\r\n", conf.env_min_dist_up);
-    printf("     - <env_coef_up>: %u\r\n", conf.env_coef_up);
-    printf("     - <env_min_dist_down>: %u\r\n", conf.env_min_dist_down);
-    printf("     - <env_coef_down>: %u\r\n", conf.env_coef_down);
-    printf("     - <step_buffer_size>: %u\r\n", conf.step_buffer_size);
-    printf("     - <mean_val_decay>: %u\r\n", conf.mean_val_decay);
-    printf("     - <mean_step_dur>: %u\r\n", conf.mean_step_dur);
-    printf("     - <filter_coeff_b2>: %u\r\n", conf.filter_coeff_b2);
-    printf("     - <filter_coeff_b1>: %u\r\n", conf.filter_coeff_b1);
-    printf("     - <filter_coeff_b0>: %u\r\n", conf.filter_coeff_b0);
-    printf("     - <filter_coeff_a2>: %u\r\n", conf.filter_coeff_a2);
-    printf("     - <filter_coeff_a1>: %u\r\n", conf.filter_coeff_a1);
-    printf("     - <filter_cascade_enabled>: %u\r\n", conf.filter_cascade_enabled);
-    printf("     - <peak_duration_min_walking>: %u\r\n", conf.peak_duration_min_walking);
-    printf("     - <peak_duration_min_running>: %u\r\n", conf.peak_duration_min_running);
-    printf("     - <step_duration_max>: %u\r\n", conf.step_duration_max);
-    printf("     - <step_duration_window>: %u\r\n", conf.step_duration_window);
-    printf("     - <half_step_enabled>: %u\r\n", conf.half_step_enabled);
-    printf("     - <activity_detection_factor>: %u\r\n", conf.activity_detection_factor);
-    printf("     - <activity_detection_thres>: %u\r\n", conf.activity_detection_thres);
-    printf("     - <step_counter_increment>: %u\r\n", conf.step_counter_increment);
-    printf("     - <step_duration_pp_enabled>: %u\r\n", conf.step_duration_pp_enabled);
-    printf("     - <step_dur_thres>: %u\r\n", conf.step_dur_thres);
-    printf("     - <en_mcr_pp>: %u\r\n", conf.en_mcr_pp);
-    printf("     - <mcr_thres>: %u\r\n", conf.mcr_thres);
-    printf("     - <sc_26>: %u\r\n", conf.sc_26);
-    printf("     - <sc_27>: %u\r\n", conf.sc_27);
+            break;
+
+        default:
+            parse_meta_event_extended(meta_event_type, byte1, byte2, event_text);
+            break;
+    }
 }
